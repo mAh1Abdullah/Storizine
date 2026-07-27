@@ -19,8 +19,11 @@ import {
   LayoutGrid,
   List,
   Check,
-  Building
+  Building,
+  Download,
+  FileText
 } from 'lucide-react';
+import { exportBookForestJSON, exportBookForestCSV } from '../utils/exportUtils';
 import {
   ResponsiveContainer,
   PieChart,
@@ -140,15 +143,34 @@ export const BookForestView: React.FC<BookForestViewProps> = ({
           </p>
         </div>
 
-        {/* AI Quick Trigger */}
-        <div className="flex flex-wrap items-center gap-3">
+        {/* AI Quick Trigger & Export Backup */}
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={onOpenAICompanion}
             className="px-4 py-2.5 rounded-xl bg-[#2a2724] hover:bg-[#3d3834] text-[#d4a373] border border-[#d4a373]/50 font-bold text-xs flex items-center space-x-2 shadow-md transition-all"
           >
             <Sparkles className="w-4 h-4 text-[#d4a373]" />
-            <span>AI Review Helper & Recommendations</span>
+            <span>AI Review Helper</span>
           </button>
+
+          <div className="flex items-center space-x-1.5 p-1 rounded-xl bg-[#181614]/60 border border-[#d4a373]/30">
+            <button
+              onClick={() => exportBookForestJSON(entries)}
+              className="px-3 py-1.5 rounded-lg bg-[#d4a373]/20 hover:bg-[#d4a373] text-[#d4a373] hover:text-[#181614] text-[11px] font-bold flex items-center space-x-1 transition-all"
+              title="Download full library as JSON file"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Backup JSON</span>
+            </button>
+            <button
+              onClick={() => exportBookForestCSV(entries)}
+              className="px-3 py-1.5 rounded-lg bg-[#d4a373]/20 hover:bg-[#d4a373] text-[#d4a373] hover:text-[#181614] text-[11px] font-bold flex items-center space-x-1 transition-all"
+              title="Export full library as CSV spreadsheet"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Export CSV</span>
+            </button>
+          </div>
         </div>
       </div>
 

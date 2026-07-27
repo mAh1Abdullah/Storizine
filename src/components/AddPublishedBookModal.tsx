@@ -74,7 +74,7 @@ export const AddPublishedBookModal: React.FC<AddPublishedBookModalProps> = ({
         writingStage,
         progressPercentage,
         blurb,
-        teaserQuote: teaserQuote || blurb.slice(0, 80),
+        teaserQuote: teaserQuote || excerpt || blurb.slice(0, 80),
         preorderLinks: vendorUrl ? [{ vendor: vendorName, url: vendorUrl }] : [],
       };
       onAddUpcoming(newUpcoming);
@@ -252,25 +252,37 @@ export const AddPublishedBookModal: React.FC<AddPublishedBookModalProps> = ({
 
           {bookType === 'published' ? (
             <div>
-              <label className="block font-bold mb-1">Sample Excerpt (Chapter 1)</label>
+              <label className="block font-bold mb-1">Sample Chapter Entry / Excerpt (Chapter 1)</label>
               <textarea
                 rows={4}
                 value={excerpt}
                 onChange={(e) => setExcerpt(e.target.value)}
-                placeholder="Paste sample chapter text for the interactive reader modal..."
+                placeholder="Paste or write sample chapter text for the interactive reader modal..."
                 className="w-full p-3 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#181614] text-[#2a2724] dark:text-[#f5f2e6] outline-none font-serif"
               />
             </div>
           ) : (
-            <div>
-              <label className="block font-bold mb-1">Teaser Quote</label>
-              <input
-                type="text"
-                value={teaserQuote}
-                onChange={(e) => setTeaserQuote(e.target.value)}
-                placeholder='e.g. "Every second is a keyhole..."'
-                className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#181614] text-[#2a2724] dark:text-[#f5f2e6] outline-none"
-              />
+            <div className="space-y-3">
+              <div>
+                <label className="block font-bold mb-1">Teaser Quote</label>
+                <input
+                  type="text"
+                  value={teaserQuote}
+                  onChange={(e) => setTeaserQuote(e.target.value)}
+                  placeholder='e.g. "Every second is a keyhole..."'
+                  className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#181614] text-[#2a2724] dark:text-[#f5f2e6] outline-none"
+                />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Sample Chapter Entry / Teaser Excerpt</label>
+                <textarea
+                  rows={3}
+                  value={excerpt}
+                  onChange={(e) => setExcerpt(e.target.value)}
+                  placeholder="Paste or write sample chapter entry text for early readers..."
+                  className="w-full p-3 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#181614] text-[#2a2724] dark:text-[#f5f2e6] outline-none font-serif"
+                />
+              </div>
             </div>
           )}
 

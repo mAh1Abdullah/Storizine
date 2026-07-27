@@ -30,6 +30,7 @@ export interface PublishedBook {
   rating: number;
   pages: number;
   formats: ('Hardcover' | 'Paperback' | 'Ebook' | 'Audiobook')[];
+  showOnFrontPage?: boolean;
 }
 
 export interface UpcomingBook {
@@ -44,6 +45,7 @@ export interface UpcomingBook {
   blurb: string;
   teaserQuote: string;
   preorderLinks: BuyLink[];
+  showOnFrontPage?: boolean;
 }
 
 export interface BookForestEntry {
@@ -109,8 +111,19 @@ export interface StorizineWork {
   featured?: boolean;
 }
 
+export interface ReadingChallenge {
+  id: string;
+  title: string;
+  targetCount: number;
+  currentCount: number;
+  completed: boolean;
+}
+
 export interface ReadingGoal {
   year: number;
   targetBooks: number;
   completedBooks: number;
+  targetPages?: number;
+  completedPages?: number;
+  challenges?: ReadingChallenge[];
 }

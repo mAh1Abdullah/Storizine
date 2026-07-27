@@ -41,7 +41,7 @@ export function App() {
   const [publishedBooks, setPublishedBooks] = useState<PublishedBook[]>(INITIAL_PUBLISHED_BOOKS);
   const [upcomingBooks, setUpcomingBooks] = useState<UpcomingBook[]>(INITIAL_UPCOMING_BOOKS);
   const [bookForestEntries, setBookForestEntries] = useState<BookForestEntry[]>(INITIAL_BOOK_FOREST);
-  const [readingGoal] = useState<ReadingGoal>(INITIAL_READING_GOAL);
+  const [readingGoal, setReadingGoal] = useState<ReadingGoal>(INITIAL_READING_GOAL);
 
   // Modal States
   const [isSampleModalOpen, setIsSampleModalOpen] = useState(false);
@@ -157,7 +157,12 @@ export function App() {
         )}
 
         {activeMainSection === 'storizine' && (
-          <StorizineView searchQuery={searchQuery} />
+          <StorizineView
+            searchQuery={searchQuery}
+            publishedBooks={publishedBooks}
+            upcomingBooks={upcomingBooks}
+            onOpenSampleChapter={handleOpenSampleChapter}
+          />
         )}
         
         {activeMainSection === 'bookforest' && (
@@ -187,6 +192,10 @@ export function App() {
               upcomingBooks={upcomingBooks}
               onUpdateUpcomingBooks={setUpcomingBooks}
               bookForestEntries={bookForestEntries}
+              readingGoal={readingGoal}
+              onUpdateReadingGoal={setReadingGoal}
+              onEditBookForestEntry={handleEditBookForestEntry}
+              onDeleteBookForestEntry={handleDeleteBookForestEntry}
               onOpenAddPortfolioModal={() => setIsAddPortfolioModalOpen(true)}
               onOpenAddBookForestModal={() => {
                 setEditingBookForestEntry(null);

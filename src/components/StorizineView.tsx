@@ -18,31 +18,81 @@ import {
   Bookmark
 } from 'lucide-react';
 import { STORIZINE_AUTHOR, STORIZINE_WORKS } from '../data/storizineData';
-import { StorizineWork, StorizineCategory } from '../types';
+import { StorizineWork, StorizineCategory, PublishedBook, UpcomingBook } from '../types';
 
 interface StorizineViewProps {
   searchQuery: string;
+  publishedBooks?: PublishedBook[];
+  upcomingBooks?: UpcomingBook[];
+  onOpenSampleChapter?: (book: PublishedBook) => void;
 }
 
-const CATEGORIES: { label: string; value: StorizineCategory | 'All'; icon: React.ReactNode; count: number }[] = [
-  { label: 'All Works', value: 'All', icon: <Layers className="w-4 h-4" />, count: STORIZINE_WORKS.length },
-  { label: 'Novels & Series', value: 'Novels & Series', icon: <BookOpen className="w-4 h-4" />, count: STORIZINE_WORKS.filter(w => w.category === 'Novels & Series').length },
-  { label: 'Sci-Fi & Cyberpunk', value: 'Sci-Fi & Cyberpunk', icon: <Sparkles className="w-4 h-4" />, count: STORIZINE_WORKS.filter(w => w.category === 'Sci-Fi & Cyberpunk').length },
-  { label: 'Stories', value: 'Stories', icon: <Compass className="w-4 h-4" />, count: STORIZINE_WORKS.filter(w => w.category === 'Stories').length },
-  { label: 'Short Stories', value: 'Short Stories', icon: <Feather className="w-4 h-4" />, count: STORIZINE_WORKS.filter(w => w.category === 'Short Stories').length },
-  { label: 'Articles & Essays', value: 'Articles & Essays', icon: <FileText className="w-4 h-4" />, count: STORIZINE_WORKS.filter(w => w.category === 'Articles & Essays').length },
-  { label: 'Guides & Features', value: 'Guides & Features', icon: <Bookmark className="w-4 h-4" />, count: STORIZINE_WORKS.filter(w => w.category === 'Guides & Features').length },
-];
-
-export const StorizineView: React.FC<StorizineViewProps> = ({ searchQuery }) => {
+export const StorizineView: React.FC<StorizineViewProps> = ({ 
+  searchQuery, 
+  publishedBooks = [], 
+  upcomingBooks = [],
+  onOpenSampleChapter
+}) => {
   const [selectedCategory, setSelectedCategory] = useState<StorizineCategory | 'All'>('All');
   const [localSearch, setLocalSearch] = useState('');
   const [selectedWork, setSelectedWork] = useState<StorizineWork | null>(null);
 
+  // Combine static Storizine works with live published & upcoming books
+  const combinedWorks = useMemo<StorizineWork[]>(() => {
+    const publishedAsWorks: StorizineWork[] = publishedBooks.map((b, idx) => ({
+      id: `pub-${b.id}`,
+      number: STORIZINE_WORKS.length + idx + 1,
+      title: b.title,
+      category: (b.genre.toLowerCase().includes('sci-fi') || b.genre.toLowerCase().includes('science')) 
+        ? 'Sci-Fi & Cyberpunk' 
+        : 'Novels & Series',
+      subcategory: b.genre,
+      series: b.series,
+      coverUrl: b.coverUrl,
+      language: 'English',
+      blurbEnglish: b.blurb,
+      excerpt: b.excerpt,
+      chapterCount: b.pages ? Math.round(b.pages / 10) : undefined,
+      readOnPlatforms: b.buyLinks.map(l => ({ name: l.vendor, url: l.url })),
+      tags: [b.genre, 'Published Novel', b.publisher, ...(b.series ? [b.series] : [])],
+      featured: true,
+    }));
+
+    const upcomingAsWorks: StorizineWork[] = upcomingBooks.map((u, idx) => ({
+      id: `up-${u.id}`,
+      number: STORIZINE_WORKS.length + publishedBooks.length + idx + 1,
+      title: `${u.title} (Upcoming)`,
+      category: (u.genre.toLowerCase().includes('sci-fi') || u.genre.toLowerCase().includes('science')) 
+        ? 'Sci-Fi & Cyberpunk' 
+        : 'Novels & Series',
+      subcategory: `Stage: ${u.writingStage} (${u.progressPercentage}%)`,
+      series: u.series,
+      coverUrl: u.coverUrl,
+      language: 'English',
+      blurbEnglish: u.blurb,
+      excerpt: u.teaserQuote,
+      readOnPlatforms: u.preorderLinks ? u.preorderLinks.map(l => ({ name: l.vendor, url: l.url })) : [],
+      tags: [u.genre, 'Upcoming Release', u.writingStage],
+      featured: false,
+    }));
+
+    return [...publishedAsWorks, ...upcomingAsWorks, ...STORIZINE_WORKS];
+  }, [publishedBooks, upcomingBooks]);
+
+  const categories = useMemo(() => [
+    { label: 'All Works', value: 'All' as const, icon: <Layers className="w-4 h-4" />, count: combinedWorks.length },
+    { label: 'Novels & Series', value: 'Novels & Series' as const, icon: <BookOpen className="w-4 h-4" />, count: combinedWorks.filter(w => w.category === 'Novels & Series').length },
+    { label: 'Sci-Fi & Cyberpunk', value: 'Sci-Fi & Cyberpunk' as const, icon: <Sparkles className="w-4 h-4" />, count: combinedWorks.filter(w => w.category === 'Sci-Fi & Cyberpunk').length },
+    { label: 'Stories', value: 'Stories' as const, icon: <Compass className="w-4 h-4" />, count: combinedWorks.filter(w => w.category === 'Stories').length },
+    { label: 'Short Stories', value: 'Short Stories' as const, icon: <Feather className="w-4 h-4" />, count: combinedWorks.filter(w => w.category === 'Short Stories').length },
+    { label: 'Articles & Essays', value: 'Articles & Essays' as const, icon: <FileText className="w-4 h-4" />, count: combinedWorks.filter(w => w.category === 'Articles & Essays').length },
+    { label: 'Guides & Features', value: 'Guides & Features' as const, icon: <Bookmark className="w-4 h-4" />, count: combinedWorks.filter(w => w.category === 'Guides & Features').length },
+  ], [combinedWorks]);
+
   const effectiveSearch = searchQuery || localSearch;
 
   const filteredWorks = useMemo(() => {
-    return STORIZINE_WORKS.filter(work => {
+    return combinedWorks.filter(work => {
       const matchesCategory = selectedCategory === 'All' || work.category === selectedCategory;
       const q = effectiveSearch.toLowerCase();
       const matchesSearch = !q || 
@@ -56,7 +106,7 @@ export const StorizineView: React.FC<StorizineViewProps> = ({ searchQuery }) => 
 
       return matchesCategory && matchesSearch;
     });
-  }, [selectedCategory, effectiveSearch]);
+  }, [combinedWorks, selectedCategory, effectiveSearch]);
 
   return (
     <div className="space-y-10 pb-16">
@@ -165,7 +215,7 @@ export const StorizineView: React.FC<StorizineViewProps> = ({ searchQuery }) => 
 
         {/* Category Page Tabs */}
         <div className="flex flex-wrap items-center gap-2 pt-2">
-          {CATEGORIES.map((cat) => {
+          {categories.map((cat) => {
             const isActive = selectedCategory === cat.value;
             return (
               <button
@@ -289,14 +339,53 @@ export const StorizineView: React.FC<StorizineViewProps> = ({ searchQuery }) => 
                 </div>
 
                 {/* Card Footer */}
-                <div className="p-5 pt-0 border-t border-[#ebd9c5]/40 dark:border-[#38332c]/40 flex items-center justify-between text-xs text-[#d4a373] font-bold">
+                <div className="p-4 pt-0 border-t border-[#ebd9c5]/40 dark:border-[#38332c]/40 flex items-center justify-between gap-2 text-xs text-[#d4a373] font-bold">
                   <div className="flex items-center space-x-2">
                     <Globe className="w-3.5 h-3.5" />
                     <span className="text-[11px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60">{work.language}</span>
                   </div>
-                  <div className="flex items-center space-x-1 text-[#d4a373] group-hover:translate-x-1 transition-transform">
-                    <span>Read Work Info</span>
-                    <ChevronRight className="w-4 h-4" />
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onOpenSampleChapter) {
+                          const publishedBook: PublishedBook = {
+                            id: work.id,
+                            title: work.title,
+                            subtitle: work.titleBengali ? `${work.titleBengali} • ${work.subcategory || ''}` : work.subcategory,
+                            series: work.series,
+                            coverUrl: work.coverUrl,
+                            genre: work.category,
+                            releaseDate: '2024',
+                            publisher: 'Storizine Edition',
+                            blurb: work.blurbEnglish || work.blurbBengali || '',
+                            excerpt: work.excerpt || `Chapter 1: ${work.title}\n\n${work.blurbEnglish || work.blurbBengali || 'Excerpt sample coming soon.'}`,
+                            buyLinks: work.readOnPlatforms ? work.readOnPlatforms.map(p => ({ vendor: p.name, url: p.url })) : [
+                              { vendor: 'Wattpad', url: 'https://www.wattpad.com' },
+                              { vendor: 'Webnovel', url: 'https://www.webnovel.com' }
+                            ],
+                            praise: [{ quote: 'A featured Storizine release.', source: 'Storizine' }],
+                            rating: 4.9,
+                            pages: 250,
+                            formats: ['Ebook', 'Paperback'],
+                          };
+                          onOpenSampleChapter(publishedBook);
+                        } else {
+                          setSelectedWork(work);
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded-xl bg-[#d4a373]/20 hover:bg-[#d4a373] text-[#d4a373] hover:text-[#181614] border border-[#d4a373]/30 text-[11px] font-bold flex items-center space-x-1 transition-colors"
+                      title="Read Sample Chapter"
+                    >
+                      <BookOpen className="w-3 h-3" />
+                      <span>Read Sample</span>
+                    </button>
+
+                    <div className="flex items-center space-x-1 text-[#d4a373] group-hover:translate-x-1 transition-transform">
+                      <span>Info</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </div>
                   </div>
                 </div>
 
@@ -413,14 +502,49 @@ export const StorizineView: React.FC<StorizineViewProps> = ({ searchQuery }) => 
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-[#fbf9ee] dark:bg-[#25221e] border-t border-[#ebd9c5] dark:border-[#38332c] flex items-center justify-between text-xs">
+            <div className="p-4 bg-[#fbf9ee] dark:bg-[#25221e] border-t border-[#ebd9c5] dark:border-[#38332c] flex flex-wrap items-center justify-between gap-2 text-xs">
               <span className="text-[#2a2724]/60 dark:text-[#f5f2e6]/60">Storizine • by {STORIZINE_AUTHOR.name}</span>
-              <button
-                onClick={() => setSelectedWork(null)}
-                className="px-5 py-2 rounded-xl bg-[#d4a373] text-[#fffef2] font-bold"
-              >
-                Close
-              </button>
+              
+              <div className="flex items-center space-x-2">
+                {onOpenSampleChapter && (
+                  <button
+                    onClick={() => {
+                      const publishedBook: PublishedBook = {
+                        id: selectedWork.id,
+                        title: selectedWork.title,
+                        subtitle: selectedWork.titleBengali ? `${selectedWork.titleBengali} • ${selectedWork.subcategory || ''}` : selectedWork.subcategory,
+                        series: selectedWork.series,
+                        coverUrl: selectedWork.coverUrl,
+                        genre: selectedWork.category,
+                        releaseDate: '2024',
+                        publisher: 'Storizine Edition',
+                        blurb: selectedWork.blurbEnglish || selectedWork.blurbBengali || '',
+                        excerpt: selectedWork.excerpt || `Chapter 1: ${selectedWork.title}\n\n${selectedWork.blurbEnglish || selectedWork.blurbBengali || 'Excerpt sample coming soon.'}`,
+                        buyLinks: selectedWork.readOnPlatforms ? selectedWork.readOnPlatforms.map(p => ({ vendor: p.name, url: p.url })) : [
+                          { vendor: 'Wattpad', url: 'https://www.wattpad.com' },
+                          { vendor: 'Webnovel', url: 'https://www.webnovel.com' }
+                        ],
+                        praise: [{ quote: 'A featured Storizine release.', source: 'Storizine' }],
+                        rating: 4.9,
+                        pages: 250,
+                        formats: ['Ebook', 'Paperback'],
+                      };
+                      setSelectedWork(null);
+                      onOpenSampleChapter(publishedBook);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-[#d4a373] text-[#181614] hover:bg-[#c39262] font-bold text-xs flex items-center space-x-1.5 shadow-xs transition-colors"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Read Sample Chapter</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setSelectedWork(null)}
+                  className="px-4 py-2 rounded-xl bg-[#2a2724] dark:bg-[#38332c] text-[#f5f2e6] font-bold"
+                >
+                  Close
+                </button>
+              </div>
             </div>
 
           </div>

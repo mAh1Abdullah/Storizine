@@ -1,4 +1,5 @@
 import { PublishedBook, UpcomingBook, BookForestEntry, AuthorProfile, ReadingGoal } from '../types';
+import { STORIZINE_WORKS } from './storizineData';
 
 export const INITIAL_AUTHOR_PROFILE: AuthorProfile = {
   name: 'mAh Abdullah',
@@ -15,7 +16,32 @@ export const INITIAL_AUTHOR_PROFILE: AuthorProfile = {
   featuredQuote: '“Writing is the compass that navigates the uncharted realms of imagination.”',
 };
 
+const STORIZINE_PUBLISHED_BOOKS: PublishedBook[] = STORIZINE_WORKS.map((work) => ({
+  id: work.id,
+  title: work.title,
+  subtitle: work.titleBengali ? `${work.titleBengali} • ${work.subcategory || ''}` : work.subcategory,
+  series: work.series,
+  coverUrl: work.coverUrl,
+  genre: work.category,
+  releaseDate: '2024',
+  publisher: 'Self-Published / Wattpad & Webnovel',
+  blurb: work.blurbEnglish || work.blurbBengali || '',
+  excerpt: work.excerpt || `Chapter 1: The Beginning of ${work.title}\n\nThe journey began on a quiet evening when unexpected news reached the town. Every mystery has a starting point, and for ${work.title}, it was no exception.`,
+  buyLinks: work.readOnPlatforms ? work.readOnPlatforms.map((p) => ({ vendor: p.name, url: p.url })) : [
+    { vendor: 'Wattpad', url: 'https://www.wattpad.com' },
+    { vendor: 'Webnovel', url: 'https://www.webnovel.com' }
+  ],
+  praise: [
+    { quote: `A captivating work by mAh Abdullah.`, source: 'Storizine Review' },
+  ],
+  rating: 4.9,
+  pages: work.chapterCount ? work.chapterCount * 12 : 240,
+  formats: ['Ebook', 'Paperback'],
+  showOnFrontPage: true,
+}));
+
 export const INITIAL_PUBLISHED_BOOKS: PublishedBook[] = [
+  ...STORIZINE_PUBLISHED_BOOKS,
   {
     id: 'chronos-1',
     title: 'The Chronos Whisperer',
@@ -44,11 +70,12 @@ Yet beneath the crystal face, two hands spun backward in a silent rhythm, pulsin
     ],
     praise: [
       { quote: 'A dazzling blend of Victorian atmosphere and mind-bending temporal mechanics.', source: 'Locus Magazine' },
-      { quote: 'Evelyn Vance crafts prose as delicate and precise as a grandmaster watchmaker.', source: 'Publishers Weekly' },
+      { quote: 'Prose as delicate and precise as a grandmaster watchmaker.', source: 'Publishers Weekly' },
     ],
     rating: 4.8,
     pages: 412,
     formats: ['Hardcover', 'Paperback', 'Ebook', 'Audiobook'],
+    showOnFrontPage: true,
   },
   {
     id: 'chronos-2',
@@ -310,4 +337,11 @@ export const INITIAL_READING_GOAL: ReadingGoal = {
   year: 2026,
   targetBooks: 25,
   completedBooks: 14,
+  targetPages: 8000,
+  completedPages: 4250,
+  challenges: [
+    { id: 'ch-1', title: '500+ Page Epic Sci-Fi Novels', targetCount: 3, currentCount: 2, completed: false },
+    { id: 'ch-2', title: 'Read 5 Classic Speculative Works', targetCount: 5, currentCount: 4, completed: false },
+    { id: 'ch-3', title: 'Collect 10 Special Hardcover Editions', targetCount: 10, currentCount: 8, completed: false },
+  ],
 };

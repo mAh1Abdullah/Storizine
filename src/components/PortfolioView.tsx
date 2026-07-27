@@ -17,23 +17,21 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   onOpenSampleChapter,
   searchQuery,
 }) => {
-  const [selectedGenre, setSelectedGenre] = useState<string>('All');
-
-  const genres = ['All', ...Array.from(new Set(publishedBooks.map((b) => b.genre)))];
-
   const filteredPublished = publishedBooks.filter((b) => {
-    const matchesGenre = selectedGenre === 'All' || b.genre === selectedGenre;
+    const isShownOnFront = b.showOnFrontPage !== false;
     const matchesSearch = !searchQuery || 
       b.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
       b.genre.toLowerCase().includes(searchQuery.toLowerCase()) ||
       b.blurb.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesGenre && matchesSearch;
+    return isShownOnFront && matchesSearch;
   });
 
   const filteredUpcoming = upcomingBooks.filter((b) => {
-    return !searchQuery || 
+    const isShownOnFront = b.showOnFrontPage !== false;
+    const matchesSearch = !searchQuery || 
       b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       b.genre.toLowerCase().includes(searchQuery.toLowerCase());
+    return isShownOnFront && matchesSearch;
   });
 
   return (
@@ -100,35 +98,115 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
         </div>
       </section>
 
+      {/* Upcoming Releases Section (Placed above Published Novels) */}
+      <section className="space-y-6 pt-2">
+        <div className="border-b border-[#ebd9c5] dark:border-[#2e2a25] pb-4">
+          <h2 className="text-3xl font-normal font-serif tracking-tight text-[#2a2724] dark:text-[#f5f2e6] flex items-center space-x-2">
+            <Clock className="w-6 h-6 text-[#d4a373]" />
+            <span>Upcoming Releases & Writing Tracker</span>
+          </h2>
+          <p className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60 mt-0.5">
+            Follow current writing stages, completion percentages, and pre-order announcements for upcoming novels.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredUpcoming.map((book) => (
+            <div
+              key={book.id}
+              className="bg-[#fbf9ee] dark:bg-[#221f1c] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] p-6 shadow-sm flex flex-col justify-between space-y-4"
+            >
+              <div className="flex gap-4">
+                <img
+                  src={book.coverUrl}
+                  alt={book.title}
+                  className="w-24 h-36 object-cover rounded-xl shadow-md shrink-0 border border-[#ebd9c5]"
+                />
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center space-x-2">
+                    <span className="px-2 py-0.5 rounded text-xs font-bold bg-[#d4a373]/20 text-[#b07843] dark:text-[#d4a373] font-handwriting">
+                      {book.genre}
+                    </span>
+                    <span className="text-[11px] font-bold text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
+                      Expected: {book.expectedRelease}
+                    </span>
+                  </div>
+
+                  <h3 className="text-2xl font-normal font-serif text-[#2a2724] dark:text-[#f5f2e6]">
+                    {book.title}
+                  </h3>
+
+                  {book.series && (
+                    <p className="text-xs text-[#d4a373] font-semibold font-handwriting">
+                      {book.series}
+                    </p>
+                  )}
+
+                  <p className="text-[#2a2724]/80 dark:text-[#f5f2e6]/80 text-xs leading-relaxed line-clamp-3">
+                    {book.blurb}
+                  </p>
+                </div>
+              </div>
+
+              {/* Progress Stage Bar */}
+              <div className="p-3 bg-[#f5f1e3] dark:bg-[#25221e] rounded-xl space-y-2 border border-[#ebd9c5]/60 dark:border-[#38332c]">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-[#2a2724] dark:text-[#f5f2e6]">
+                    Writing Stage: <span className="text-[#d4a373]">{book.writingStage}</span>
+                  </span>
+                  <span className="font-mono font-bold text-[#d4a373]">
+                    {book.progressPercentage}%
+                  </span>
+                </div>
+
+                <div className="w-full bg-[#ebd9c5] dark:bg-[#38332c] h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-[#d4a373] h-full transition-all duration-500"
+                    style={{ width: `${book.progressPercentage}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Teaser quote */}
+              {book.teaserQuote && (
+                <blockquote className="italic font-serif text-xs text-[#2a2724] dark:text-[#f5f2e6] bg-[#f5f1e3] dark:bg-[#2b2723] p-2.5 rounded-lg border-l-2 border-[#d4a373]">
+                  {book.teaserQuote}
+                </blockquote>
+              )}
+
+              {/* Pre-order links */}
+              {book.preorderLinks && book.preorderLinks.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {book.preorderLinks.map((link, i) => (
+                    <a
+                      key={i}
+                      href={link.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 rounded-xl bg-[#2a2724] hover:bg-[#3d3834] text-[#d4a373] font-bold text-xs flex items-center space-x-1"
+                    >
+                      <span>{link.vendor}</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ))}
+                </div>
+              )}
+
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Published Works Section */}
       <section className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#ebd9c5] dark:border-[#2e2a25] pb-4">
-          <div>
-            <h2 className="text-3xl font-normal font-serif tracking-tight text-[#2a2724] dark:text-[#f5f2e6] flex items-center space-x-2">
-              <BookOpen className="w-6 h-6 text-[#d4a373]" />
-              <span>Published Novels</span>
-            </h2>
-            <p className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60 mt-0.5">
-              Explore published books, read sample chapters, and find physical & digital store purchase links.
-            </p>
-          </div>
-
-          {/* Genre Filter */}
-          <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 sm:pb-0">
-            {genres.map((genre) => (
-              <button
-                key={genre}
-                onClick={() => setSelectedGenre(genre)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                  selectedGenre === genre
-                    ? 'bg-[#2a2724] text-[#d4a373] dark:bg-[#d4a373] dark:text-[#181614] shadow-xs'
-                    : 'bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
-                }`}
-              >
-                {genre}
-              </button>
-            ))}
-          </div>
+        <div className="border-b border-[#ebd9c5] dark:border-[#2e2a25] pb-4">
+          <h2 className="text-3xl font-normal font-serif tracking-tight text-[#2a2724] dark:text-[#f5f2e6] flex items-center space-x-2">
+            <BookOpen className="w-6 h-6 text-[#d4a373]" />
+            <span>Published Novels</span>
+          </h2>
+          <p className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60 mt-0.5">
+            Explore published books, read sample chapters, and find physical & digital store purchase links.
+          </p>
         </div>
 
         {/* Published Books Cards Grid */}
@@ -239,105 +317,6 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                   ))}
                 </div>
               </div>
-
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Upcoming Releases Section */}
-      <section className="space-y-6 pt-4">
-        <div className="border-b border-[#ebd9c5] dark:border-[#2e2a25] pb-4">
-          <h2 className="text-3xl font-normal font-serif tracking-tight text-[#2a2724] dark:text-[#f5f2e6] flex items-center space-x-2">
-            <Clock className="w-6 h-6 text-[#d4a373]" />
-            <span>Upcoming Releases & Writing Tracker</span>
-          </h2>
-          <p className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60 mt-0.5">
-            Follow current writing stages, completion percentages, and pre-order announcements for upcoming novels.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredUpcoming.map((book) => (
-            <div
-              key={book.id}
-              className="bg-[#fbf9ee] dark:bg-[#221f1c] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] p-6 shadow-sm flex flex-col justify-between space-y-4"
-            >
-              <div className="flex gap-4">
-                <img
-                  src={book.coverUrl}
-                  alt={book.title}
-                  className="w-24 h-36 object-cover rounded-xl shadow-md shrink-0 border border-[#ebd9c5]"
-                />
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-bold bg-[#d4a373]/20 text-[#b07843] dark:text-[#d4a373] font-handwriting">
-                      {book.genre}
-                    </span>
-                    <span className="text-[11px] font-bold text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
-                      Expected: {book.expectedRelease}
-                    </span>
-                  </div>
-
-                  <h3 className="text-2xl font-normal font-serif text-[#2a2724] dark:text-[#f5f2e6]">
-                    {book.title}
-                  </h3>
-
-                  {book.series && (
-                    <p className="text-xs text-[#d4a373] font-semibold font-handwriting">
-                      {book.series}
-                    </p>
-                  )}
-
-                  <p className="text-[#2a2724]/80 dark:text-[#f5f2e6]/80 text-xs leading-relaxed line-clamp-3">
-                    {book.blurb}
-                  </p>
-                </div>
-              </div>
-
-              {/* Progress Stage Bar */}
-              <div className="p-3 bg-[#f5f1e3] dark:bg-[#25221e] rounded-xl space-y-2 border border-[#ebd9c5]/60 dark:border-[#38332c]">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-[#2a2724] dark:text-[#f5f2e6]">
-                    Writing Stage: <span className="text-[#d4a373]">{book.writingStage}</span>
-                  </span>
-                  <span className="font-mono font-bold text-[#d4a373]">
-                    {book.progressPercentage}%
-                  </span>
-                </div>
-
-                <div className="w-full bg-[#ebd9c5] dark:bg-[#38332c] h-2 rounded-full overflow-hidden">
-                  <div
-                    className="bg-[#d4a373] h-full transition-all duration-500"
-                    style={{ width: `${book.progressPercentage}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Teaser quote */}
-              {book.teaserQuote && (
-                <blockquote className="italic font-serif text-xs text-[#2a2724] dark:text-[#f5f2e6] bg-[#f5f1e3] dark:bg-[#2b2723] p-2.5 rounded-lg border-l-2 border-[#d4a373]">
-                  {book.teaserQuote}
-                </blockquote>
-              )}
-
-              {/* Pre-order links */}
-              {book.preorderLinks && book.preorderLinks.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {book.preorderLinks.map((link, i) => (
-                    <a
-                      key={i}
-                      href={link.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-3 py-1.5 rounded-xl bg-[#2a2724] hover:bg-[#3d3834] text-[#d4a373] font-bold text-xs flex items-center space-x-1"
-                    >
-                      <span>{link.vendor}</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  ))}
-                </div>
-              )}
 
             </div>
           ))}
