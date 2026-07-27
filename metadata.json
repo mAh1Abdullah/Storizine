@@ -1,0 +1,6 @@
+{
+  "name": "Writer's Portfolio & BookForest",
+  "description": "An author portfolio showcase for published and upcoming books, featuring BookForest - a personal Goodreads-style reading tracker and physical/virtual library collection manager.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
