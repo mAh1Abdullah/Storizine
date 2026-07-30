@@ -66,19 +66,21 @@ body {
     box-shadow: none !important;
   }
 
-  .bg-[#2a2724], .bg-[#181614], .bg-[#1f1d1a], .bg-[#fbf9ee], .bg-[#f5f1e3] {
+  .bg-\[\#2a2724\], .bg-\[\#181614\], .bg-\[\#1f1d1a\], .bg-\[\#fbf9ee\], .bg-\[\#f5f1e3\] {
     background-color: #ffffff !important;
     color: #000000 !important;
     border-color: #e5e7eb !important;
   }
 
-  .text-[#fffef2], .text-[#f5f2e6], .text-[#d4a373] {
+  .text-\[\#fffef2\], .text-\[\#f5f2e6\], .text-\[\#d4a373\] {
     color: #111827 !important;
   }
 
-  .border-[#ebd9c5], .border-[#38332c] {
+  .border-\[\#ebd9c5\], .border-\[\#38332c\] {
     border-color: #e5e7eb !important;
   }
 
-  page-break-inside: avoid;
+  tr, img, blockquote, figure {
+    break-inside: avoid;
+  }
 }
