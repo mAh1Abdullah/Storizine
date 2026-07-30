@@ -498,8 +498,8 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
         </NavLink>
       </div>
 
-      {/* Main Content Container Card */}
-      <div className="bg-[#fbf9ee]/60 dark:bg-[#221f1c]/60 p-6 sm:p-8 rounded-3xl border border-[#ebd9c5]/60 dark:border-[#38332c]/60 shadow-xs">
+      {/* Main Content Container Card (Off-White Background matching Fable account design) */}
+      <div className="bg-[#f8f6ed] dark:bg-[#1e1b18] p-6 sm:p-10 rounded-3xl border border-[#e7dec3]/80 dark:border-[#332e27] shadow-sm min-h-[480px]">
         <Routes>
           
           {/* TAB 1: STATS */}
@@ -573,7 +573,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
                         type="number"
                         value={goalForm.year}
                         onChange={(e) => setGoalForm(prev => ({ ...prev, year: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] text-[#2a2724] dark:text-[#f5f2e6] outline-none"
                       />
                     </div>
                     <div>
@@ -582,7 +582,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
                         type="number"
                         value={goalForm.targetBooks}
                         onChange={(e) => setGoalForm(prev => ({ ...prev, targetBooks: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] text-[#2a2724] dark:text-[#f5f2e6] outline-none"
                       />
                     </div>
                     <div>
@@ -591,7 +591,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
                         type="number"
                         value={goalForm.completedBooks}
                         onChange={(e) => setGoalForm(prev => ({ ...prev, completedBooks: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] text-[#2a2724] dark:text-[#f5f2e6] outline-none"
                       />
                     </div>
                     <div>
@@ -600,7 +600,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
                         type="number"
                         value={goalForm.targetPages || 8000}
                         onChange={(e) => setGoalForm(prev => ({ ...prev, targetPages: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] text-[#2a2724] dark:text-[#f5f2e6] outline-none"
                       />
                     </div>
                     <div>
@@ -609,7 +609,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
                         type="number"
                         value={goalForm.completedPages || 0}
                         onChange={(e) => setGoalForm(prev => ({ ...prev, completedPages: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] text-[#2a2724] dark:text-[#f5f2e6] outline-none"
                       />
                     </div>
                   </div>
@@ -738,6 +738,13 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
             path="reviews"
             element={
               <div className="space-y-8">
+                {/* Fable Style Empty State Placeholder */}
+                <div className="py-20 text-center flex flex-col items-center justify-center space-y-2">
+                  <p className="text-sm font-sans font-medium text-[#2a2724]/40 dark:text-[#f5f2e6]/40">
+                    No reviews yet
+                  </p>
+                </div>
+
                 <GoodreadsQuotesSection onImportToBookForest={dummyImport} />
               </div>
             }
@@ -822,7 +829,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
                           type="text"
                           value={profileForm.name}
                           onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] text-[#2a2724] dark:text-[#f5f2e6] outline-none"
                         />
                       </div>
 
@@ -832,7 +839,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
                           type="text"
                           value={profileForm.penName || ''}
                           onChange={(e) => setProfileForm({ ...profileForm, penName: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] text-[#2a2724] dark:text-[#f5f2e6] outline-none"
                         />
                       </div>
 
@@ -842,7 +849,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
                           type="text"
                           value={profileForm.title}
                           onChange={(e) => setProfileForm({ ...profileForm, title: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] text-[#2a2724] dark:text-[#f5f2e6] outline-none"
                         />
                       </div>
 
@@ -852,7 +859,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
                           rows={4}
                           value={profileForm.bio}
                           onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-                          className="w-full p-3 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none leading-relaxed"
+                          className="w-full p-3 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] text-[#2a2724] dark:text-[#f5f2e6] outline-none leading-relaxed"
                         />
                       </div>
 
@@ -862,7 +869,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
                           type="text"
                           value={profileForm.avatarUrl}
                           onChange={(e) => setProfileForm({ ...profileForm, avatarUrl: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none font-mono"
+                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] text-[#2a2724] dark:text-[#f5f2e6] outline-none font-mono"
                         />
                       </div>
 
@@ -872,7 +879,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
                           type="text"
                           value={profileForm.featuredQuote}
                           onChange={(e) => setProfileForm({ ...profileForm, featuredQuote: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none font-serif"
+                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] text-[#2a2724] dark:text-[#f5f2e6] outline-none font-serif"
                         />
                       </div>
                     </div>
@@ -895,23 +902,23 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
 
                   <form onSubmit={handleAddSocialLink} className="flex flex-col sm:flex-row items-end gap-3 pt-2">
                     <div className="w-full sm:w-40">
-                      <label className="block font-bold mb-1">Platform</label>
+                      <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">Platform</label>
                       <input
                         type="text"
                         value={newSocialPlatform}
                         onChange={(e) => setNewSocialPlatform(e.target.value)}
                         placeholder="Substack"
-                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] text-[#2a2724] dark:text-[#f5f2e6] outline-none"
                       />
                     </div>
                     <div className="flex-1 w-full">
-                      <label className="block font-bold mb-1">URL</label>
+                      <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">URL</label>
                       <input
                         type="text"
                         value={newSocialUrl}
                         onChange={(e) => setNewSocialUrl(e.target.value)}
                         placeholder="https://..."
-                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none font-mono"
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] text-[#2a2724] dark:text-[#f5f2e6] outline-none font-mono"
                       />
                     </div>
                     <button type="submit" className="px-4 py-2 rounded-xl bg-[#2a2724] text-[#d4a373] font-bold text-xs cursor-pointer">

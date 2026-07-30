@@ -297,7 +297,7 @@ export const ClubsSection: React.FC<ClubsSectionProps> = ({
                 onChange={(e) => setNewCommentText(e.target.value)}
                 placeholder={`What was your reaction to Chapter ${activeChapter} of ${selectedWork.title}?`}
                 rows={3}
-                className="w-full p-3 rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] text-xs font-serif outline-none resize-none"
+                className="w-full p-3 rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] text-[#2a2724] dark:text-[#f5f2e6] text-xs font-serif outline-none resize-none"
               />
 
               <div className="flex items-center justify-between pt-1">

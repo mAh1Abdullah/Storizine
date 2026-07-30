@@ -122,7 +122,7 @@ export const GoodreadsQuotesSection: React.FC<GoodreadsQuotesSectionProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search quotes by author, title, or keywords (e.g. Tolkien, Magic, Reading)..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] text-xs font-serif outline-none"
+            className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] text-[#2a2724] dark:text-[#f5f2e6] text-xs font-serif outline-none"
           />
         </div>
 
@@ -135,7 +135,7 @@ export const GoodreadsQuotesSection: React.FC<GoodreadsQuotesSectionProps> = ({
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                 selectedTag === tag
                   ? 'bg-[#2a2724] text-[#d4a373] shadow-xs'
-                  : 'bg-[#f5f1e3] dark:bg-[#181614] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724]'
+                  : 'bg-[#f5f1e3] dark:bg-[#181614] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
               }`}
             >
               #{tag}

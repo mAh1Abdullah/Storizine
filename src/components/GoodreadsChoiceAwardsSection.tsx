@@ -103,7 +103,7 @@ export const GoodreadsChoiceAwardsSection: React.FC<GoodreadsChoiceAwardsSection
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 whitespace-nowrap ${
                 isActive
                   ? 'bg-[#2a2724] text-[#d4a373] shadow-md'
-                  : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724]'
+                  : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
               }`}
             >
               <Award className={`w-3.5 h-3.5 ${userVotedBookId ? 'text-amber-400' : ''}`} />
