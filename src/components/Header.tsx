@@ -1,9 +1,8 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { BookOpen, Moon, Sun, Search, Library, Feather, LayoutDashboard, Lock, LogOut } from 'lucide-react';
 
 interface HeaderProps {
-  activeMainSection: 'portfolio' | 'storizine' | 'bookforest' | 'dashboard';
-  setActiveMainSection: (sec: 'portfolio' | 'storizine' | 'bookforest' | 'dashboard') => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   isLoggedIn: boolean;
@@ -15,8 +14,6 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  activeMainSection,
-  setActiveMainSection,
   searchQuery,
   setSearchQuery,
   isLoggedIn,
@@ -26,6 +23,14 @@ export const Header: React.FC<HeaderProps> = ({
   darkMode,
   setDarkMode,
 }) => {
+  const location = useLocation();
+  const currentPath = location.pathname;
+
+  const isHomeActive = currentPath === '/' || currentPath === '/home';
+  const isStorizineActive = currentPath.startsWith('/storizine');
+  const isBookForestActive = currentPath.startsWith('/bookforest');
+  const isDashboardActive = currentPath.startsWith('/dashboard');
+
   return (
     <header className={`border-b sticky top-0 z-40 backdrop-blur-md transition-colors ${
       darkMode 
@@ -35,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         
         {/* Author Brand */}
-        <div className="flex items-center space-x-3 shrink-0">
+        <Link to="/" className="flex items-center space-x-3 shrink-0 hover:opacity-90 transition-opacity">
           <div className="w-10 h-10 rounded-xl bg-[#2a2724] dark:bg-[#2a2520] flex items-center justify-center text-[#d4a373] shadow-sm border border-[#d4a373]/30">
             <Feather className="w-5 h-5" />
           </div>
@@ -49,51 +54,51 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60 hidden sm:block">
-              Front Page & BookForest Catalog
+              Home &amp; BookForest Catalog
             </p>
           </div>
-        </div>
+        </Link>
 
         {/* Center Main Tab Switcher */}
         <div className="flex items-center p-1 rounded-xl bg-[#f5f1e3] dark:bg-[#25221e] border border-[#ebd9c5] dark:border-[#38332c]">
-          <button
+          <Link
             id="btn-tab-portfolio"
-            onClick={() => setActiveMainSection('portfolio')}
+            to="/"
             className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              activeMainSection === 'portfolio'
+              isHomeActive
                 ? 'bg-[#fffef2] dark:bg-[#181614] text-[#8c5627] dark:text-[#d4a373] shadow-xs border border-[#ebd9c5] dark:border-[#38332c]'
                 : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
             }`}
           >
             <BookOpen className="w-3.5 h-3.5" />
-            <span>Front Page</span>
-          </button>
+            <span>Home Page</span>
+          </Link>
 
-          <button
+          <Link
             id="btn-tab-storizine"
-            onClick={() => setActiveMainSection('storizine')}
+            to="/storizine"
             className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              activeMainSection === 'storizine'
+              isStorizineActive
                 ? 'bg-[#2a2724] text-[#d4a373] shadow-xs border border-[#d4a373]/40'
                 : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
             }`}
           >
             <Feather className="w-3.5 h-3.5 text-[#d4a373]" />
             <span>STORIZINE</span>
-          </button>
+          </Link>
 
-          <button
+          <Link
             id="btn-tab-bookforest"
-            onClick={() => setActiveMainSection('bookforest')}
+            to="/bookforest"
             className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              activeMainSection === 'bookforest'
+              isBookForestActive
                 ? 'bg-[#fffef2] dark:bg-[#181614] text-[#15803d] dark:text-[#4ade80] shadow-xs border border-[#ebd9c5] dark:border-[#38332c]'
                 : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
             }`}
           >
             <Library className="w-3.5 h-3.5" />
             <span>BookForest</span>
-          </button>
+          </Link>
         </div>
 
         {/* Search Input */}
@@ -113,11 +118,11 @@ export const Header: React.FC<HeaderProps> = ({
           
           {isLoggedIn ? (
             <>
-              <button
+              <Link
                 id="btn-tab-dashboard"
-                onClick={() => setActiveMainSection('dashboard')}
+                to="/dashboard"
                 className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
-                  activeMainSection === 'dashboard'
+                  isDashboardActive
                     ? 'bg-[#2a2724] text-[#d4a373] shadow-xs border border-[#d4a373]/40'
                     : 'bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724] dark:text-[#f5f2e6] hover:bg-[#ebd9c5]/50 border border-[#ebd9c5] dark:border-[#38332c]'
                 }`}
@@ -125,11 +130,11 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <LayoutDashboard className="w-3.5 h-3.5 text-[#d4a373]" />
                 <span className="hidden sm:inline">Dashboard</span>
-              </button>
+              </Link>
 
               <button
                 onClick={onLogout}
-                className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-[#2a2724] hover:bg-[#3d3834] text-[#f5f2e6]/80 hover:text-[#f5f2e6] border border-[#d4a373]/30 transition-all shadow-xs"
+                className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-[#2a2724] hover:bg-[#3d3834] text-[#f5f2e6]/80 hover:text-[#f5f2e6] border border-[#d4a373]/30 transition-all shadow-xs cursor-pointer"
                 title="Sign out of Writer Dashboard"
               >
                 <LogOut className="w-3.5 h-3.5 text-[#d4a373]" />
@@ -139,7 +144,7 @@ export const Header: React.FC<HeaderProps> = ({
           ) : (
             <button
               onClick={onOpenLoginModal}
-              className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-[#2a2724] hover:bg-[#3d3834] text-[#d4a373] border border-[#d4a373]/40 transition-colors shadow-xs"
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-[#2a2724] hover:bg-[#3d3834] text-[#d4a373] border border-[#d4a373]/40 transition-colors shadow-xs cursor-pointer"
               title="Login as Author / Writer"
             >
               <Lock className="w-3.5 h-3.5" />
@@ -150,7 +155,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="btn-toggle-darkmode"
             onClick={() => setDarkMode(!darkMode)}
-            className="p-2 text-[#2a2724]/70 hover:text-[#2a2724] dark:text-[#f5f2e6]/70 dark:hover:text-[#f5f2e6] rounded-xl hover:bg-[#f5f1e3] dark:hover:bg-[#25221e] transition-colors"
+            className="p-2 text-[#2a2724]/70 hover:text-[#2a2724] dark:text-[#f5f2e6]/70 dark:hover:text-[#f5f2e6] rounded-xl hover:bg-[#f5f1e3] dark:hover:bg-[#25221e] transition-colors cursor-pointer"
             aria-label="Toggle theme"
           >
             {darkMode ? <Sun className="w-4 h-4 text-[#d4a373]" /> : <Moon className="w-4 h-4 text-[#b07843]" />}
@@ -162,3 +167,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

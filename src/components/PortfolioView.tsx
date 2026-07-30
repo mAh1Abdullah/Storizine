@@ -61,7 +61,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           <div className="space-y-4 text-center md:text-left">
             <div>
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#d4a373]/20 text-[#d4a373] border border-[#d4a373]/30 font-handwriting">
-                Official Front Page • mAh Abdullah
+                Official Home Page • mAh Abdullah
               </span>
               <h1 className="text-3xl sm:text-5xl font-normal font-serif tracking-tight mt-2 text-[#fffef2]">
                 {author.name}
