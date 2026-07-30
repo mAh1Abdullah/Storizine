@@ -148,6 +148,7 @@ export function App() {
           navigate('/');
         }}
         authorName={authorProfile.name}
+        avatarUrl={authorProfile.avatarUrl}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
       />
