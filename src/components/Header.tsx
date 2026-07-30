@@ -29,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isHomeActive = currentPath === '/' || currentPath === '/home';
   const isStorizineActive = currentPath.startsWith('/storizine');
   const isBookForestActive = currentPath.startsWith('/bookforest');
-  const isDashboardActive = currentPath.startsWith('/dashboard');
+  const isAccountActive = currentPath.startsWith('/account') || currentPath.startsWith('/dashboard');
 
   return (
     <header className={`border-b sticky top-0 z-40 backdrop-blur-md transition-colors ${
@@ -119,23 +119,23 @@ export const Header: React.FC<HeaderProps> = ({
           {isLoggedIn ? (
             <>
               <Link
-                id="btn-tab-dashboard"
-                to="/dashboard"
+                id="btn-tab-account"
+                to="/account"
                 className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
-                  isDashboardActive
+                  isAccountActive
                     ? 'bg-[#2a2724] text-[#d4a373] shadow-xs border border-[#d4a373]/40'
                     : 'bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724] dark:text-[#f5f2e6] hover:bg-[#ebd9c5]/50 border border-[#ebd9c5] dark:border-[#38332c]'
                 }`}
-                title="Go to Writer Dashboard"
+                title="Go to Author Account Portal"
               >
                 <LayoutDashboard className="w-3.5 h-3.5 text-[#d4a373]" />
-                <span className="hidden sm:inline">Dashboard</span>
+                <span className="hidden sm:inline">Account</span>
               </Link>
 
               <button
                 onClick={onLogout}
                 className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-[#2a2724] hover:bg-[#3d3834] text-[#f5f2e6]/80 hover:text-[#f5f2e6] border border-[#d4a373]/30 transition-all shadow-xs cursor-pointer"
-                title="Sign out of Writer Dashboard"
+                title="Sign out of Account Portal"
               >
                 <LogOut className="w-3.5 h-3.5 text-[#d4a373]" />
                 <span className="hidden sm:inline">Logout</span>

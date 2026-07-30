@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Routes, Route, Navigate, NavLink, useNavigate } from 'react-router-dom';
 import {
   AuthorProfile,
   PublishedBook,
@@ -17,26 +18,30 @@ import {
   Save,
   CheckCircle2,
   Sparkles,
-  Layers,
   Globe,
-  Settings,
   Clock,
   Layout,
-  ExternalLink,
-  MessageSquareQuote,
   FileText,
   Award,
   Target,
   Download,
-  TrendingUp,
   BarChart2,
   DollarSign,
-  Library,
-  Users,
   Check,
+  User,
+  Camera,
+  Upload,
+  Library,
+  Settings as SettingsIcon,
+  ShieldCheck,
+  BookMarked,
+  Layers,
+  Filter,
 } from 'lucide-react';
 import { exportBookForestJSON, exportBookForestCSV } from '../utils/exportUtils';
 import { ReaderGraphSection } from './ReaderGraphSection';
+import { ClubsSection } from './ClubsSection';
+import { GoodreadsQuotesSection } from './GoodreadsQuotesSection';
 
 interface WriterDashboardViewProps {
   author: AuthorProfile;
@@ -50,6 +55,7 @@ interface WriterDashboardViewProps {
   onUpdateReadingGoal?: (goal: ReadingGoal) => void;
   onEditBookForestEntry?: (entry: BookForestEntry) => void;
   onDeleteBookForestEntry?: (id: string) => void;
+  onSaveBookForestEntry?: (entry: BookForestEntry) => void;
   onOpenAddPortfolioModal: () => void;
   onOpenAddBookForestModal: () => void;
   onOpenGutenbergModal?: () => void;
@@ -71,22 +77,25 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
   onUpdateReadingGoal,
   onEditBookForestEntry,
   onDeleteBookForestEntry,
+  onSaveBookForestEntry,
   onOpenAddPortfolioModal,
   onOpenAddBookForestModal,
-  onOpenGutenbergModal,
-  onOpenOpenLibraryModal,
-  onOpenStoryGraphModal,
-  onOpenFableLounge,
-  onOpenAICompanion,
 }) => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'published' | 'upcoming' | 'bookforest' | 'goals' | 'site'>('profile');
+  const navigate = useNavigate();
   const [savedSuccess, setSavedSuccess] = useState<string | null>(null);
 
   // Profile form local state
   const [profileForm, setProfileForm] = useState<AuthorProfile>({ ...author });
 
+  // Social link state
+  const [newSocialPlatform, setNewSocialPlatform] = useState('');
+  const [newSocialUrl, setNewSocialUrl] = useState('');
+
+  // Bookshelf filter state
+  const [selectedLocationFilter, setSelectedLocationFilter] = useState<string>('All Locations');
+
   // Reading Goal local form
-  const [goalForm, setGoalForm] = useState<ReadingGoal>({
+  const defaultGoal: ReadingGoal = {
     year: readingGoal?.year || 2026,
     targetBooks: readingGoal?.targetBooks || 25,
     completedBooks: readingGoal?.completedBooks ?? bookForestEntries.filter(e => e.readingStatus === 'read').length,
@@ -97,7 +106,9 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
       { id: 'ch-2', title: 'Read 5 Classic Speculative Works', targetCount: 5, currentCount: 4, completed: false },
       { id: 'ch-3', title: 'Collect 10 Special Hardcover Editions', targetCount: 10, currentCount: 8, completed: false },
     ],
-  });
+  };
+
+  const [goalForm, setGoalForm] = useState<ReadingGoal>(defaultGoal);
 
   const [newChallengeTitle, setNewChallengeTitle] = useState('');
   const [newChallengeTarget, setNewChallengeTarget] = useState<number>(5);
@@ -116,11 +127,41 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
     setTimeout(() => setSavedSuccess(null), 3000);
   };
 
+  const handleShareProfile = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.origin + '/account');
+      showToast('Profile URL copied to clipboard!');
+    } else {
+      showToast('Profile URL: ' + window.location.origin + '/account');
+    }
+  };
+
   // Profile Save
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     onUpdateAuthor(profileForm);
-    showToast('Author profile updated successfully!');
+    showToast('Author profile settings saved successfully!');
+  };
+
+  // Social link handlers
+  const handleAddSocialLink = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSocialPlatform.trim() || !newSocialUrl.trim()) return;
+    const updatedLinks = [...(profileForm.socialLinks || []), { platform: newSocialPlatform.trim(), url: newSocialUrl.trim() }];
+    const updatedProfile = { ...profileForm, socialLinks: updatedLinks };
+    setProfileForm(updatedProfile);
+    onUpdateAuthor(updatedProfile);
+    setNewSocialPlatform('');
+    setNewSocialUrl('');
+    showToast(`Added social profile for ${newSocialPlatform}`);
+  };
+
+  const handleDeleteSocialLink = (index: number) => {
+    const updatedLinks = (profileForm.socialLinks || []).filter((_, i) => i !== index);
+    const updatedProfile = { ...profileForm, socialLinks: updatedLinks };
+    setProfileForm(updatedProfile);
+    onUpdateAuthor(updatedProfile);
+    showToast('Removed social link.');
   };
 
   // Published book update handlers
@@ -149,7 +190,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
       return b;
     });
     onUpdatePublishedBooks(updated);
-    showToast('Front Page visibility updated!');
+    showToast('Home Page visibility updated!');
   };
 
   // Upcoming book update handlers
@@ -178,7 +219,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
       return u;
     });
     onUpdateUpcomingBooks(updated);
-    showToast('Front Page visibility updated!');
+    showToast('Home Page visibility updated!');
   };
 
   const handlePublishUpcomingBook = (u: UpcomingBook) => {
@@ -294,10 +335,23 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
     });
   };
 
+  const dummyImport = (entry: BookForestEntry) => {
+    if (onSaveBookForestEntry) {
+      onSaveBookForestEntry(entry);
+      showToast(`Imported "${entry.title}" to BookForest!`);
+    }
+  };
+
+  // Filter books for Bookshelf tab
+  const filteredBookshelfEntries = bookForestEntries.filter((b) => {
+    if (selectedLocationFilter === 'All Locations') return true;
+    return b.collectionLocation === selectedLocationFilter;
+  });
+
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-6 pb-16">
       
-      {/* Toast notification */}
+      {/* Toast Notification */}
       {savedSuccess && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#2a2724] text-[#f5f2e6] border border-[#d4a373] px-5 py-3 rounded-2xl shadow-xl flex items-center space-x-3 transition-all animate-bounce">
           <CheckCircle2 className="w-5 h-5 text-[#d4a373]" />
@@ -305,1141 +359,768 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
         </div>
       )}
 
-      {/* Dashboard Top Header Banner */}
-      <div className="rounded-3xl bg-[#2a2724] dark:bg-[#1f1d1a] text-[#f5f2e6] p-6 sm:p-8 shadow-xl border border-[#d4a373]/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#d4a373]/20 text-[#d4a373] border border-[#d4a373]/30 font-handwriting">
-              Author Content Management System
-            </span>
-            <span className="text-xs text-[#d4a373] font-semibold font-handwriting">
-              Live Web Editing Mode
-            </span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-normal font-serif text-[#fffef2] tracking-tight flex items-center gap-3">
-            <Feather className="w-8 h-8 text-[#d4a373]" />
-            Writer’s Content Control Dashboard
-          </h1>
-          <p className="text-xs sm:text-sm text-[#f5f2e6]/80 max-w-xl font-sans">
-            Instantly manage bio, published bibliography, upcoming release milestones, sample chapters, and web content.
-          </p>
-        </div>
-      </div>
-
-      {/* Overview Metric Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 bg-[#fbf9ee] dark:bg-[#221f1c] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-1">
-          <span className="text-[11px] font-bold uppercase text-[#2a2724]/60 dark:text-[#f5f2e6]/60 font-handwriting">
-            Published Novels
-          </span>
-          <div className="text-2xl font-serif text-[#b07843] dark:text-[#d4a373] font-bold">
-            {publishedBooks.length}
-          </div>
-        </div>
-
-        <div className="p-4 bg-[#fbf9ee] dark:bg-[#221f1c] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-1">
-          <span className="text-[11px] font-bold uppercase text-[#2a2724]/60 dark:text-[#f5f2e6]/60 font-handwriting">
-            Upcoming / Works-in-Progress
-          </span>
-          <div className="text-2xl font-serif text-[#b07843] dark:text-[#d4a373] font-bold">
-            {upcomingBooks.length}
-          </div>
-        </div>
-
-        <div className="p-4 bg-[#fbf9ee] dark:bg-[#221f1c] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-1">
-          <span className="text-[11px] font-bold uppercase text-[#2a2724]/60 dark:text-[#f5f2e6]/60 font-handwriting">
-            BookForest Archive
-          </span>
-          <div className="text-2xl font-serif text-[#15803d] dark:text-[#4ade80] font-bold">
-            {bookForestEntries.length} Books
-          </div>
-        </div>
-
-        <div className="p-4 bg-[#fbf9ee] dark:bg-[#221f1c] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-1">
-          <span className="text-[11px] font-bold uppercase text-[#2a2724]/60 dark:text-[#f5f2e6]/60 font-handwriting">
-            System Status
-          </span>
-          <div className="text-xs font-bold text-[#15803d] dark:text-[#4ade80] flex items-center space-x-1 pt-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Live Sync Active</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Dashboard Sub-Tab Navigation */}
-      <div className="flex border-b border-[#ebd9c5] dark:border-[#38332c] pb-3 gap-2 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-            activeTab === 'profile'
-              ? 'bg-[#2a2724] text-[#d4a373] shadow-xs'
-              : 'bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
-          }`}
+      {/* Centered Profile Header (Matching User's Reference Image) */}
+      <div className="flex flex-col items-center justify-center text-center space-y-3 pt-4 pb-2">
+        
+        {/* Large Circular Emblem / Avatar */}
+        <div 
+          className="relative group cursor-pointer"
+          onClick={() => navigate('/account/settings')}
+          title="Click to edit profile & avatar settings"
         >
-          <Feather className="w-3.5 h-3.5 text-[#d4a373]" />
-          <span>Author Profile & Bio</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('published')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-            activeTab === 'published'
-              ? 'bg-[#2a2724] text-[#d4a373] shadow-xs'
-              : 'bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
-          }`}
-        >
-          <BookOpen className="w-3.5 h-3.5 text-[#d4a373]" />
-          <span>Published Bibliography ({publishedBooks.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('upcoming')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-            activeTab === 'upcoming'
-              ? 'bg-[#2a2724] text-[#d4a373] shadow-xs'
-              : 'bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
-          }`}
-        >
-          <Clock className="w-3.5 h-3.5 text-[#d4a373]" />
-          <span>Upcoming Releases ({upcomingBooks.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('bookforest')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-            activeTab === 'bookforest'
-              ? 'bg-[#2a2724] text-[#d4a373] shadow-xs'
-              : 'bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
-          }`}
-        >
-          <BookOpen className="w-3.5 h-3.5 text-[#15803d]" />
-          <span>BookForest Catalog ({bookForestEntries.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('goals')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-            activeTab === 'goals'
-              ? 'bg-[#2a2724] text-[#d4a373] shadow-xs'
-              : 'bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
-          }`}
-        >
-          <Target className="w-3.5 h-3.5 text-[#d4a373]" />
-          <span>Reading Goals & Challenges</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('site')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-            activeTab === 'site'
-              ? 'bg-[#2a2724] text-[#d4a373] shadow-xs'
-              : 'bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
-          }`}
-        >
-          <Layout className="w-3.5 h-3.5 text-[#d4a373]" />
-          <span>Site Announcements & Banner</span>
-        </button>
-      </div>
-
-      {/* TAB 1: AUTHOR PROFILE EDITOR */}
-      {activeTab === 'profile' && (
-        <form onSubmit={handleSaveProfile} className="bg-[#fbf9ee] dark:bg-[#221f1c] p-6 sm:p-8 rounded-3xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-6 text-xs">
-          <div className="flex items-center justify-between border-b border-[#ebd9c5] dark:border-[#38332c] pb-4">
-            <div>
-              <h2 className="font-serif font-normal text-2xl text-[#2a2724] dark:text-[#f5f2e6]">
-                Edit Author Profile Information
-              </h2>
-              <p className="text-[#2a2724]/60 dark:text-[#f5f2e6]/60 text-xs mt-0.5">
-                Updates bio, pen name, accolades, avatar, and featured quote across the entire website.
-              </p>
-            </div>
-            <button
-              type="submit"
-              className="px-5 py-2.5 rounded-xl font-bold bg-[#d4a373] hover:bg-[#c39262] text-[#fffef2] flex items-center space-x-2 shadow-md"
-            >
-              <Save className="w-4 h-4" />
-              <span>Save Profile Changes</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
-                Author Public Name
-              </label>
-              <input
-                type="text"
-                value={profileForm.name}
-                onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] text-[#2a2724] dark:text-[#f5f2e6] outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
-                Pen Name / Variant
-              </label>
-              <input
-                type="text"
-                value={profileForm.penName || ''}
-                onChange={(e) => setProfileForm({ ...profileForm, penName: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] text-[#2a2724] dark:text-[#f5f2e6] outline-none"
-              />
-            </div>
-
-            <div className="col-span-1 md:col-span-2">
-              <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
-                Title / Author Subtitle & Accolades
-              </label>
-              <input
-                type="text"
-                value={profileForm.title}
-                onChange={(e) => setProfileForm({ ...profileForm, title: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] text-[#2a2724] dark:text-[#f5f2e6] outline-none"
-              />
-            </div>
-
-            <div className="col-span-1 md:col-span-2">
-              <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
-                Full Biography
-              </label>
-              <textarea
-                rows={4}
-                value={profileForm.bio}
-                onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-                className="w-full p-3 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] text-[#2a2724] dark:text-[#f5f2e6] outline-none leading-relaxed"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
-                Avatar / Headshot URL
-              </label>
-              <input
-                type="text"
-                value={profileForm.avatarUrl}
-                onChange={(e) => setProfileForm({ ...profileForm, avatarUrl: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] text-[#2a2724] dark:text-[#f5f2e6] outline-none font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
-                Featured Quote
-              </label>
-              <input
-                type="text"
-                value={profileForm.featuredQuote}
-                onChange={(e) => setProfileForm({ ...profileForm, featuredQuote: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] text-[#2a2724] dark:text-[#f5f2e6] outline-none font-serif"
-              />
-            </div>
-          </div>
-        </form>
-      )}
-
-      {/* TAB 2: PUBLISHED BIBLIOGRAPHY MANAGER */}
-      {activeTab === 'published' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="font-serif font-normal text-2xl text-[#2a2724] dark:text-[#f5f2e6]">
-              Manage Published Bibliography
-            </h2>
-            <button
-              onClick={onOpenAddPortfolioModal}
-              className="px-4 py-2 rounded-xl bg-[#d4a373] hover:bg-[#c39262] text-[#fffef2] font-bold text-xs flex items-center space-x-1.5 shadow-md"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add New Published Work</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            {publishedBooks.map((book) => (
-              <div
-                key={book.id}
-                className="bg-[#fbf9ee] dark:bg-[#221f1c] p-5 rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-              >
-                <div className="flex items-center space-x-4">
-                  <img
-                    src={book.coverUrl}
-                    alt={book.title}
-                    className="w-16 h-24 object-cover rounded-xl border border-[#ebd9c5] shrink-0"
-                  />
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <h3 className="font-serif text-lg font-normal text-[#2a2724] dark:text-[#f5f2e6]">
-                        {book.title}
-                      </h3>
-                      {book.series && (
-                        <span className="text-xs px-2 py-0.5 rounded bg-[#d4a373]/20 text-[#b07843] dark:text-[#d4a373] font-handwriting font-bold">
-                          {book.series}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
-                      Released {book.releaseDate} • {book.publisher} • {book.pages} pages
-                    </p>
-                    <p className="text-xs text-[#2a2724]/80 dark:text-[#f5f2e6]/80 line-clamp-2 max-w-xl">
-                      {book.blurb}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => handleToggleFrontPagePublished(book.id)}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1 border ${
-                      book.showOnFrontPage !== false
-                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
-                        : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
-                    }`}
-                    title="Choose if this book is displayed on Front Page"
-                  >
-                    <span>{book.showOnFrontPage !== false ? '✓ Shown on Front Page' : '✕ Hidden on Front Page'}</span>
-                  </button>
-
-                  <button
-                    onClick={() => setEditingPublished(book)}
-                    className="px-3 py-2 rounded-xl bg-[#f5f1e3] dark:bg-[#25221e] hover:bg-[#ebd9c5] text-[#2a2724] dark:text-[#f5f2e6] border border-[#ebd9c5] dark:border-[#38332c] font-bold text-xs flex items-center space-x-1"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 text-[#d4a373]" />
-                    <span>Edit Book</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleDeletePublishedBook(book.id, book.title)}
-                    className="p-2 rounded-xl hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 transition-colors"
-                    title="Delete Book"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-[#fffef2] dark:border-[#181614] shadow-xl bg-[#fef08a] text-[#ca8a04] dark:bg-[#25221e] flex items-center justify-center">
+            {author.avatarUrl ? (
+              <img src={author.avatarUrl} alt={author.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-14 h-14 rounded-full bg-[#fef08a] text-[#854d0e] flex items-center justify-center text-2xl font-bold font-serif">
+                <Feather className="w-8 h-8 text-[#ca8a04]" />
               </div>
-            ))}
+            )}
           </div>
+        </div>
 
-          {/* Edit Published Book Modal */}
-          {editingPublished && (
-            <div className="fixed inset-0 z-50 bg-[#181614]/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-              <div className="bg-[#fffef2] dark:bg-[#1f1d1a] border border-[#ebd9c5] dark:border-[#38332c] text-[#2a2724] dark:text-[#f5f2e6] w-full max-w-2xl rounded-2xl shadow-2xl p-6 space-y-4 text-xs max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between border-b border-[#ebd9c5] dark:border-[#38332c] pb-3">
-                  <h3 className="font-serif font-normal text-xl">
-                    Editing Published Work: {editingPublished.title}
-                  </h3>
-                  <button
-                    onClick={() => setEditingPublished(null)}
-                    className="text-[#2a2724]/50 hover:text-[#2a2724]"
-                  >
-                    ✕
-                  </button>
+        {/* Profile Author Title / Name */}
+        <h1 className="text-3xl sm:text-4xl font-normal font-serif text-[#2a2724] dark:text-[#f5f2e6] tracking-tight">
+          {author.name}
+        </h1>
+
+        {/* Subtitle Blue Link */}
+        <a
+          href="#network"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('/');
+          }}
+          className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 font-sans tracking-wide transition-colors"
+        >
+          View network
+        </a>
+
+        {/* Action Icon Buttons */}
+        <div className="flex items-center space-x-3 pt-1">
+          <button
+            onClick={handleShareProfile}
+            className="p-2 rounded-full border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#221f1c] hover:bg-[#f5f1e3] dark:hover:bg-[#25221e] text-[#2a2724] dark:text-[#f5f2e6] transition-colors shadow-xs cursor-pointer"
+            title="Share Account Profile"
+          >
+            <Upload className="w-4 h-4" />
+          </button>
+          
+          <NavLink
+            to="/account/settings"
+            className="p-2 rounded-full border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#221f1c] hover:bg-[#f5f1e3] dark:hover:bg-[#25221e] text-[#2a2724] dark:text-[#f5f2e6] transition-colors shadow-xs cursor-pointer"
+            title="Profile Settings & Bio"
+          >
+            <Edit3 className="w-4 h-4" />
+          </NavLink>
+        </div>
+      </div>
+
+      {/* Centered Minimalist Navigation Tabs Bar */}
+      <div className="flex items-center justify-center border-b border-[#ebd9c5]/60 dark:border-[#38332c]/60 pt-2 gap-6 sm:gap-10 overflow-x-auto text-xs font-medium">
+        <NavLink
+          to="/account"
+          end
+          className={({ isActive }) =>
+            `pb-3 px-1 transition-all flex items-center space-x-1.5 whitespace-nowrap cursor-pointer ${
+              isActive
+                ? 'border-b-2 border-[#15803d] dark:border-[#4ade80] font-bold text-[#2a2724] dark:text-[#f5f2e6]'
+                : 'text-[#2a2724]/60 dark:text-[#f5f2e6]/60 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
+            }`
+          }
+        >
+          <span>Stats</span>
+        </NavLink>
+
+        <NavLink
+          to="/account/lists"
+          className={({ isActive }) =>
+            `pb-3 px-1 transition-all flex items-center space-x-1.5 whitespace-nowrap cursor-pointer ${
+              isActive
+                ? 'border-b-2 border-[#15803d] dark:border-[#4ade80] font-bold text-[#2a2724] dark:text-[#f5f2e6]'
+                : 'text-[#2a2724]/60 dark:text-[#f5f2e6]/60 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
+            }`
+          }
+        >
+          <span>Lists</span>
+        </NavLink>
+
+        <NavLink
+          to="/account/bookshelf"
+          className={({ isActive }) =>
+            `pb-3 px-1 transition-all flex items-center space-x-1.5 whitespace-nowrap cursor-pointer ${
+              isActive
+                ? 'border-b-2 border-[#15803d] dark:border-[#4ade80] font-bold text-[#2a2724] dark:text-[#f5f2e6]'
+                : 'text-[#2a2724]/60 dark:text-[#f5f2e6]/60 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
+            }`
+          }
+        >
+          <span>Bookshelf</span>
+        </NavLink>
+
+        <NavLink
+          to="/account/clubs"
+          className={({ isActive }) =>
+            `pb-3 px-1 transition-all flex items-center space-x-1.5 whitespace-nowrap cursor-pointer ${
+              isActive
+                ? 'border-b-2 border-[#15803d] dark:border-[#4ade80] font-bold text-[#2a2724] dark:text-[#f5f2e6]'
+                : 'text-[#2a2724]/60 dark:text-[#f5f2e6]/60 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
+            }`
+          }
+        >
+          <span>Clubs</span>
+        </NavLink>
+
+        <NavLink
+          to="/account/reviews"
+          className={({ isActive }) =>
+            `pb-3 px-1 transition-all flex items-center space-x-1.5 whitespace-nowrap cursor-pointer ${
+              isActive
+                ? 'border-b-2 border-[#15803d] dark:border-[#4ade80] font-bold text-[#2a2724] dark:text-[#f5f2e6]'
+                : 'text-[#2a2724]/60 dark:text-[#f5f2e6]/60 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
+            }`
+          }
+        >
+          <span>Reviews</span>
+        </NavLink>
+
+        <NavLink
+          to="/account/posts"
+          className={({ isActive }) =>
+            `pb-3 px-1 transition-all flex items-center space-x-1.5 whitespace-nowrap cursor-pointer ${
+              isActive
+                ? 'border-b-2 border-[#15803d] dark:border-[#4ade80] font-bold text-[#2a2724] dark:text-[#f5f2e6]'
+                : 'text-[#2a2724]/60 dark:text-[#f5f2e6]/60 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
+            }`
+          }
+        >
+          <span>Posts</span>
+        </NavLink>
+
+        <NavLink
+          to="/account/settings"
+          className={({ isActive }) =>
+            `pb-3 px-1 transition-all flex items-center space-x-1.5 whitespace-nowrap cursor-pointer ${
+              isActive
+                ? 'border-b-2 border-[#15803d] dark:border-[#4ade80] font-bold text-[#2a2724] dark:text-[#f5f2e6]'
+                : 'text-[#2a2724]/60 dark:text-[#f5f2e6]/60 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
+            }`
+          }
+        >
+          <span>Settings</span>
+        </NavLink>
+      </div>
+
+      {/* Main Content Container Card */}
+      <div className="bg-[#fbf9ee]/60 dark:bg-[#221f1c]/60 p-6 sm:p-8 rounded-3xl border border-[#ebd9c5]/60 dark:border-[#38332c]/60 shadow-xs">
+        <Routes>
+          
+          {/* TAB 1: STATS */}
+          <Route
+            index
+            element={
+              <div className="space-y-8 text-xs">
+                {/* Metric Summary Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-[#fffef2] dark:bg-[#181614] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-1">
+                    <span className="text-[11px] font-bold uppercase text-[#2a2724]/60 dark:text-[#f5f2e6]/60 font-handwriting">
+                      Annual Target
+                    </span>
+                    <div className="text-2xl font-serif text-[#b07843] dark:text-[#d4a373] font-bold">
+                      {goalForm.completedBooks} / {goalForm.targetBooks} Books
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-[#fffef2] dark:bg-[#181614] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-1">
+                    <span className="text-[11px] font-bold uppercase text-[#2a2724]/60 dark:text-[#f5f2e6]/60 font-handwriting">
+                      Pages Read
+                    </span>
+                    <div className="text-2xl font-serif text-[#15803d] dark:text-[#4ade80] font-bold">
+                      {(goalForm.completedPages || 0).toLocaleString()} Pages
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-[#fffef2] dark:bg-[#181614] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-1">
+                    <span className="text-[11px] font-bold uppercase text-[#2a2724]/60 dark:text-[#f5f2e6]/60 font-handwriting">
+                      Active Challenges
+                    </span>
+                    <div className="text-2xl font-serif text-[#b07843] dark:text-[#d4a373] font-bold">
+                      {(goalForm.challenges || []).filter(c => c.completed).length} / {(goalForm.challenges || []).length} Completed
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-[#fffef2] dark:bg-[#181614] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-1">
+                    <span className="text-[11px] font-bold uppercase text-[#2a2724]/60 dark:text-[#f5f2e6]/60 font-handwriting">
+                      Collection Value
+                    </span>
+                    <div className="text-2xl font-serif text-emerald-600 dark:text-emerald-400 font-bold">
+                      ${bookForestEntries.reduce((acc, curr) => acc + (curr.purchasePrice || 0), 0).toFixed(2)}
+                    </div>
+                  </div>
                 </div>
 
-                <form onSubmit={handleSavePublishedBook} className="space-y-3">
-                  <div>
-                    <label className="block font-bold mb-1">Book Title</label>
-                    <input
-                      type="text"
-                      value={editingPublished.title}
-                      onChange={(e) => setEditingPublished({ ...editingPublished, title: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#181614] outline-none"
-                    />
-                  </div>
+                {/* Reader Analytics Graph Section */}
+                <ReaderGraphSection entries={bookForestEntries} readingGoal={goalForm} />
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-bold mb-1">Series Name</label>
-                      <input
-                        type="text"
-                        value={editingPublished.series || ''}
-                        onChange={(e) => setEditingPublished({ ...editingPublished, series: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#181614] outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold mb-1">Genre</label>
-                      <input
-                        type="text"
-                        value={editingPublished.genre}
-                        onChange={(e) => setEditingPublished({ ...editingPublished, genre: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#181614] outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold mb-1">Cover Image URL</label>
-                    <input
-                      type="text"
-                      value={editingPublished.coverUrl}
-                      onChange={(e) => setEditingPublished({ ...editingPublished, coverUrl: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#181614] outline-none font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold mb-1">Book Blurb / Synopsis</label>
-                    <textarea
-                      rows={3}
-                      value={editingPublished.blurb}
-                      onChange={(e) => setEditingPublished({ ...editingPublished, blurb: e.target.value })}
-                      className="w-full p-3 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#181614] outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold mb-1">Sample Chapter Excerpt</label>
-                    <textarea
-                      rows={4}
-                      value={editingPublished.excerpt || ''}
-                      onChange={(e) => setEditingPublished({ ...editingPublished, excerpt: e.target.value })}
-                      className="w-full p-3 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#181614] outline-none font-serif"
-                    />
-                  </div>
-
-                  <div className="p-3 bg-[#f5f1e3] dark:bg-[#25221e] rounded-xl border border-[#ebd9c5] dark:border-[#38332c]">
-                    <label className="flex items-center space-x-2 font-bold cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={editingPublished.showOnFrontPage !== false}
-                        onChange={(e) => setEditingPublished({ ...editingPublished, showOnFrontPage: e.target.checked })}
-                        className="rounded accent-[#d4a373] w-4 h-4"
-                      />
-                      <span className="text-xs">Display this book on the Front Page (Portfolio)</span>
-                    </label>
-                  </div>
-
-                  <div className="pt-3 flex justify-end space-x-2">
+                {/* Goal & Challenge Form Controls */}
+                <form onSubmit={handleSaveGoal} className="p-5 rounded-2xl bg-[#fffef2] dark:bg-[#181614] border border-[#ebd9c5] dark:border-[#38332c] space-y-4">
+                  <div className="flex items-center justify-between border-b border-[#ebd9c5] dark:border-[#38332c] pb-3">
+                    <h3 className="font-serif font-bold text-base text-[#2a2724] dark:text-[#f5f2e6] flex items-center gap-2">
+                      <Target className="w-4 h-4 text-[#d4a373]" />
+                      <span>Configure Annual Reading Goals</span>
+                    </h3>
                     <button
                       type="button"
-                      onClick={() => setEditingPublished(null)}
-                      className="px-4 py-2 rounded-xl font-bold border border-[#ebd9c5]"
+                      onClick={handleSyncCompletedWithBookForest}
+                      className="px-3 py-1.5 rounded-xl bg-[#2a2724] hover:bg-[#3d3834] text-[#d4a373] border border-[#d4a373]/40 text-[11px] font-bold flex items-center space-x-1 cursor-pointer"
                     >
-                      Cancel
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Auto-Sync with BookForest</span>
                     </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div>
+                      <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">Target Year</label>
+                      <input
+                        type="number"
+                        value={goalForm.year}
+                        onChange={(e) => setGoalForm(prev => ({ ...prev, year: Number(e.target.value) }))}
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">Target Books</label>
+                      <input
+                        type="number"
+                        value={goalForm.targetBooks}
+                        onChange={(e) => setGoalForm(prev => ({ ...prev, targetBooks: Number(e.target.value) }))}
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">Completed Books</label>
+                      <input
+                        type="number"
+                        value={goalForm.completedBooks}
+                        onChange={(e) => setGoalForm(prev => ({ ...prev, completedBooks: Number(e.target.value) }))}
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">Target Pages</label>
+                      <input
+                        type="number"
+                        value={goalForm.targetPages || 8000}
+                        onChange={(e) => setGoalForm(prev => ({ ...prev, targetPages: Number(e.target.value) }))}
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">Completed Pages</label>
+                      <input
+                        type="number"
+                        value={goalForm.completedPages || 0}
+                        onChange={(e) => setGoalForm(prev => ({ ...prev, completedPages: Number(e.target.value) }))}
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
                     <button
                       type="submit"
-                      className="px-6 py-2 rounded-xl font-bold bg-[#d4a373] text-[#fffef2]"
+                      className="px-5 py-2.5 rounded-xl font-bold bg-[#d4a373] hover:bg-[#c39262] text-[#fffef2] flex items-center space-x-2 shadow-sm transition-all cursor-pointer"
                     >
-                      Save Book Updates
+                      <Save className="w-4 h-4" />
+                      <span>Save Goal Settings</span>
                     </button>
                   </div>
                 </form>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            }
+          />
 
-      {/* TAB 3: UPCOMING RELEASES MANAGER */}
-      {activeTab === 'upcoming' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="font-serif font-normal text-2xl text-[#2a2724] dark:text-[#f5f2e6]">
-              Manage Upcoming Releases & WIPs
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            {upcomingBooks.map((u) => (
-              <div
-                key={u.id}
-                className="bg-[#fbf9ee] dark:bg-[#221f1c] p-5 rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-              >
-                <div className="flex items-center space-x-4">
-                  <img
-                    src={u.coverUrl}
-                    alt={u.title}
-                    className="w-16 h-24 object-cover rounded-xl border border-[#ebd9c5] shrink-0"
-                  />
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <h3 className="font-serif text-lg font-normal text-[#2a2724] dark:text-[#f5f2e6]">
-                        {u.title}
-                      </h3>
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#d4a373]/20 text-[#b07843] dark:text-[#d4a373] font-handwriting">
-                        Stage: {u.writingStage} ({u.progressPercentage}%)
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
-                      Target Release: {u.expectedRelease} • Genre: {u.genre}
-                    </p>
-                    <p className="text-xs text-[#2a2724]/80 dark:text-[#f5f2e6]/80 line-clamp-2 max-w-xl">
-                      {u.blurb}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => handlePublishUpcomingBook(u)}
-                    className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center space-x-1 shadow-xs transition-colors"
-                    title="Publish this work now and move to Published Bibliography"
-                  >
-                    <BookOpen className="w-3.5 h-3.5" />
-                    <span>Publish & Move to Bibliography</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleToggleFrontPageUpcoming(u.id)}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1 border ${
-                      u.showOnFrontPage !== false
-                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
-                        : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
-                    }`}
-                    title="Choose if this upcoming release is displayed on Front Page"
-                  >
-                    <span>{u.showOnFrontPage !== false ? '✓ Shown on Front Page' : '✕ Hidden on Front Page'}</span>
-                  </button>
-
-                  <button
-                    onClick={() => setEditingUpcoming(u)}
-                    className="px-3 py-2 rounded-xl bg-[#f5f1e3] dark:bg-[#25221e] hover:bg-[#ebd9c5] text-[#2a2724] dark:text-[#f5f2e6] border border-[#ebd9c5] dark:border-[#38332c] font-bold text-xs flex items-center space-x-1"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 text-[#d4a373]" />
-                    <span>Edit Progress</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleDeleteUpcomingBook(u.id, u.title)}
-                    className="p-2 rounded-xl hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Edit Upcoming Modal */}
-          {editingUpcoming && (
-            <div className="fixed inset-0 z-50 bg-[#181614]/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-              <div className="bg-[#fffef2] dark:bg-[#1f1d1a] border border-[#ebd9c5] dark:border-[#38332c] text-[#2a2724] dark:text-[#f5f2e6] w-full max-w-xl rounded-2xl shadow-2xl p-6 space-y-4 text-xs">
-                <div className="flex items-center justify-between border-b border-[#ebd9c5] dark:border-[#38332c] pb-3">
-                  <h3 className="font-serif font-normal text-xl">
-                    Edit Upcoming Release: {editingUpcoming.title}
-                  </h3>
-                  <button
-                    onClick={() => setEditingUpcoming(null)}
-                    className="text-[#2a2724]/50 hover:text-[#2a2724]"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <form onSubmit={handleSaveUpcomingBook} className="space-y-3">
-                  <div>
-                    <label className="block font-bold mb-1">Title</label>
-                    <input
-                      type="text"
-                      value={editingUpcoming.title}
-                      onChange={(e) => setEditingUpcoming({ ...editingUpcoming, title: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] bg-[#fbf9ee] dark:bg-[#181614] outline-none"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-bold mb-1">Writing Stage</label>
-                      <select
-                        value={editingUpcoming.writingStage}
-                        onChange={(e) => setEditingUpcoming({ ...editingUpcoming, writingStage: e.target.value as WritingStage })}
-                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] bg-[#fbf9ee] dark:bg-[#181614] outline-none"
-                      >
-                        <option value="Outlining">Outlining</option>
-                        <option value="Drafting">Drafting</option>
-                        <option value="Revision">Revision</option>
-                        <option value="Editing">Editing</option>
-                        <option value="Proofreading">Proofreading</option>
-                        <option value="ARC Review">ARC Review</option>
-                        <option value="Print Ready">Print Ready</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-bold mb-1">Completion ({editingUpcoming.progressPercentage}%)</label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={editingUpcoming.progressPercentage}
-                        onChange={(e) => setEditingUpcoming({ ...editingUpcoming, progressPercentage: parseInt(e.target.value) })}
-                        className="w-full accent-[#d4a373] mt-2"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold mb-1">Expected Release Date</label>
-                    <input
-                      type="text"
-                      value={editingUpcoming.expectedRelease}
-                      onChange={(e) => setEditingUpcoming({ ...editingUpcoming, expectedRelease: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] bg-[#fbf9ee] dark:bg-[#181614] outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold mb-1">Teaser Quote / Sample Chapter Entry</label>
-                    <textarea
-                      rows={3}
-                      value={editingUpcoming.teaserQuote}
-                      onChange={(e) => setEditingUpcoming({ ...editingUpcoming, teaserQuote: e.target.value })}
-                      placeholder="Write or paste teaser quote / sample chapter excerpt..."
-                      className="w-full p-3 rounded-xl border border-[#ebd9c5] bg-[#fbf9ee] dark:bg-[#181614] outline-none font-serif text-xs"
-                    />
-                  </div>
-
-                  <div className="p-3 bg-[#f5f1e3] dark:bg-[#25221e] rounded-xl border border-[#ebd9c5] dark:border-[#38332c]">
-                    <label className="flex items-center space-x-2 font-bold cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={editingUpcoming.showOnFrontPage !== false}
-                        onChange={(e) => setEditingUpcoming({ ...editingUpcoming, showOnFrontPage: e.target.checked })}
-                        className="rounded accent-[#d4a373] w-4 h-4"
-                      />
-                      <span className="text-xs">Display this work on the Front Page (Portfolio)</span>
-                    </label>
-                  </div>
-
-                  <div className="pt-3 flex flex-wrap items-center justify-between gap-2">
+          {/* TAB 2: LISTS */}
+          <Route
+            path="lists"
+            element={
+              <div className="space-y-8 text-xs">
+                
+                {/* Published Bibliography Sub-Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-[#ebd9c5] dark:border-[#38332c] pb-3">
+                    <h2 className="font-serif font-normal text-2xl text-[#2a2724] dark:text-[#f5f2e6]">
+                      Published Bibliography ({publishedBooks.length})
+                    </h2>
                     <button
-                      type="button"
-                      onClick={() => handlePublishUpcomingBook(editingUpcoming)}
-                      className="px-4 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center space-x-1.5 shadow-xs transition-colors"
+                      onClick={onOpenAddPortfolioModal}
+                      className="px-4 py-2 rounded-xl bg-[#d4a373] hover:bg-[#c39262] text-[#fffef2] font-bold text-xs flex items-center space-x-1.5 shadow-md cursor-pointer"
                     >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      <span>Publish Now (Move to Bibliography)</span>
+                      <Plus className="w-4 h-4" />
+                      <span>Add Published Work</span>
                     </button>
-
-                    <div className="flex items-center space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => setEditingUpcoming(null)}
-                        className="px-4 py-2 rounded-xl font-bold border border-[#ebd9c5]"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className="px-6 py-2 rounded-xl font-bold bg-[#d4a373] text-[#fffef2]"
-                      >
-                        Save Progress
-                      </button>
-                    </div>
                   </div>
-                </form>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* TAB 4: BOOKFOREST CATALOG MANAGER */}
-      {activeTab === 'bookforest' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="font-serif font-normal text-2xl text-[#2a2724] dark:text-[#f5f2e6]">
-                Manage BookForest Catalog
-              </h2>
-              <p className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60 font-sans">
-                Curate your reading log, ratings, format collection, and download backups for safety.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => exportBookForestJSON(bookForestEntries)}
-                className="px-3.5 py-2 rounded-xl bg-[#2a2724] dark:bg-[#1f1d1a] hover:bg-[#3d3834] text-[#d4a373] border border-[#d4a373]/40 font-bold text-xs flex items-center space-x-1.5 shadow-xs"
-                title="Backup full BookForest library as JSON"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Backup JSON</span>
-              </button>
+                  <div className="grid grid-cols-1 gap-3">
+                    {publishedBooks.map((book) => (
+                      <div
+                        key={book.id}
+                        className="bg-[#fffef2] dark:bg-[#181614] p-4 rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center space-x-4">
+                          <img src={book.coverUrl} alt={book.title} className="w-14 h-20 object-cover rounded-xl border border-[#ebd9c5] shrink-0" />
+                          <div className="space-y-1">
+                            <h3 className="font-serif text-base font-bold text-[#2a2724] dark:text-[#f5f2e6]">{book.title}</h3>
+                            <p className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60">Released {book.releaseDate} • {book.publisher}</p>
+                          </div>
+                        </div>
 
-              <button
-                onClick={() => exportBookForestCSV(bookForestEntries)}
-                className="px-3.5 py-2 rounded-xl bg-[#2a2724] dark:bg-[#1f1d1a] hover:bg-[#3d3834] text-[#d4a373] border border-[#d4a373]/40 font-bold text-xs flex items-center space-x-1.5 shadow-xs"
-                title="Export full BookForest library as CSV"
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span>Export CSV</span>
-              </button>
-
-              <button
-                onClick={onOpenAddBookForestModal}
-                className="px-4 py-2 rounded-xl bg-[#15803d] hover:bg-[#166534] text-[#fffef2] font-bold text-xs flex items-center space-x-1.5 shadow-md"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add BookForest Entry</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            {bookForestEntries.map((bf) => (
-              <div
-                key={bf.id}
-                className="bg-[#fbf9ee] dark:bg-[#221f1c] p-5 rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-              >
-                <div className="flex items-center space-x-4">
-                  <img
-                    src={bf.coverUrl}
-                    alt={bf.title}
-                    className="w-16 h-24 object-cover rounded-xl border border-[#ebd9c5] shrink-0"
-                  />
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <h3 className="font-serif text-lg font-normal text-[#2a2724] dark:text-[#f5f2e6]">
-                        {bf.title}
-                      </h3>
-                      <span className="text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70">
-                        by {bf.author}
-                      </span>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#15803d]/15 text-[#15803d] dark:text-[#4ade80]">
-                        {bf.readingStatus}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
-                      Rating: {'★'.repeat(bf.userRating)}{'☆'.repeat(5 - bf.userRating)} • Genre: {bf.genre} • Added: {bf.dateAdded}
-                    </p>
-                    <p className="text-xs text-[#2a2724]/80 dark:text-[#f5f2e6]/80 line-clamp-2 max-w-xl font-serif">
-                      "{bf.reviewComments}"
-                    </p>
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      {bf.ownedFormats.map((fmt) => (
-                        <span key={fmt} className="text-[10px] px-2 py-0.5 rounded-md bg-[#ebd9c5]/40 dark:bg-[#38332c] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 font-mono">
-                          {fmt}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2 shrink-0">
-                  {onEditBookForestEntry && (
-                    <button
-                      onClick={() => onEditBookForestEntry(bf)}
-                      className="px-3 py-2 rounded-xl bg-[#f5f1e3] dark:bg-[#25221e] hover:bg-[#ebd9c5] text-[#2a2724] dark:text-[#f5f2e6] border border-[#ebd9c5] dark:border-[#38332c] font-bold text-xs flex items-center space-x-1"
-                    >
-                      <Edit3 className="w-3.5 h-3.5 text-[#15803d]" />
-                      <span>Edit Entry</span>
-                    </button>
-                  )}
-
-                  {onDeleteBookForestEntry && (
-                    <button
-                      onClick={() => {
-                        if (window.confirm(`Delete BookForest entry "${bf.title}"?`)) {
-                          onDeleteBookForestEntry(bf.id);
-                          showToast(`Removed "${bf.title}" from BookForest.`);
-                        }
-                      }}
-                      className="p-2 rounded-xl hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 transition-colors"
-                      title="Delete Entry"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 5: READING GOAL, CHALLENGES & STATS CONTROL PANEL */}
-      {activeTab === 'goals' && (
-        <div className="space-y-6">
-          <div className="bg-[#fbf9ee] dark:bg-[#221f1c] p-6 sm:p-8 rounded-3xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-6 text-xs">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#ebd9c5] dark:border-[#38332c] pb-4">
-              <div>
-                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#d4a373]/20 text-[#d4a373] border border-[#d4a373]/30 font-handwriting">
-                  Reader Analytics & Control Panel
-                </span>
-                <h2 className="font-serif font-normal text-2xl sm:text-3xl text-[#2a2724] dark:text-[#f5f2e6] pt-1">
-                  Reading Goals & Custom Challenges Control Panel
-                </h2>
-                <p className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60 font-sans">
-                  Manage your annual reading targets, track page milestones, add custom reading challenges, and export library backups.
-                </p>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => exportBookForestJSON(bookForestEntries)}
-                  className="px-3.5 py-2 rounded-xl bg-[#2a2724] text-[#d4a373] hover:bg-[#3d3834] font-bold text-xs flex items-center space-x-1.5 shadow-xs border border-[#d4a373]/40"
-                  title="Download JSON Backup"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Backup JSON</span>
-                </button>
-                <button
-                  onClick={() => exportBookForestCSV(bookForestEntries)}
-                  className="px-3.5 py-2 rounded-xl bg-[#2a2724] text-[#d4a373] hover:bg-[#3d3834] font-bold text-xs flex items-center space-x-1.5 shadow-xs border border-[#d4a373]/40"
-                  title="Export CSV Spreadsheet"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Export CSV</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Quick Metrics Overview */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-4 rounded-2xl bg-[#f5f1e3] dark:bg-[#25221e] border border-[#ebd9c5] dark:border-[#38332c] space-y-1">
-                <div className="flex items-center justify-between text-[#d4a373]">
-                  <span className="text-[11px] font-bold font-handwriting uppercase">Annual Books Target</span>
-                  <Target className="w-4 h-4" />
-                </div>
-                <div className="text-2xl font-serif font-bold text-[#2a2724] dark:text-[#f5f2e6]">
-                  {goalForm.completedBooks} / {goalForm.targetBooks}
-                </div>
-                <div className="w-full h-2 rounded-full bg-[#ebd9c5] dark:bg-[#38332c] overflow-hidden">
-                  <div
-                    className="h-full bg-[#d4a373] transition-all"
-                    style={{ width: `${Math.min(100, Math.round((goalForm.completedBooks / (goalForm.targetBooks || 1)) * 100))}%` }}
-                  ></div>
-                </div>
-                <span className="text-[10px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
-                  {Math.round((goalForm.completedBooks / (goalForm.targetBooks || 1)) * 100)}% of {goalForm.year} Goal
-                </span>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[#f5f1e3] dark:bg-[#25221e] border border-[#ebd9c5] dark:border-[#38332c] space-y-1">
-                <div className="flex items-center justify-between text-[#15803d] dark:text-[#4ade80]">
-                  <span className="text-[11px] font-bold font-handwriting uppercase">Pages Read Milestone</span>
-                  <BarChart2 className="w-4 h-4" />
-                </div>
-                <div className="text-2xl font-serif font-bold text-[#2a2724] dark:text-[#f5f2e6]">
-                  {(goalForm.completedPages || 0).toLocaleString()} / {(goalForm.targetPages || 0).toLocaleString()}
-                </div>
-                <div className="w-full h-2 rounded-full bg-[#ebd9c5] dark:bg-[#38332c] overflow-hidden">
-                  <div
-                    className="h-full bg-[#15803d] dark:bg-[#4ade80] transition-all"
-                    style={{ width: `${Math.min(100, Math.round(((goalForm.completedPages || 0) / (goalForm.targetPages || 1)) * 100))}%` }}
-                  ></div>
-                </div>
-                <span className="text-[10px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
-                  {Math.round(((goalForm.completedPages || 0) / (goalForm.targetPages || 1)) * 100)}% Page Completion
-                </span>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[#f5f1e3] dark:bg-[#25221e] border border-[#ebd9c5] dark:border-[#38332c] space-y-1">
-                <div className="flex items-center justify-between text-[#b07843]">
-                  <span className="text-[11px] font-bold font-handwriting uppercase">Active Challenges</span>
-                  <Award className="w-4 h-4" />
-                </div>
-                <div className="text-2xl font-serif font-bold text-[#2a2724] dark:text-[#f5f2e6]">
-                  {(goalForm.challenges || []).filter(c => c.completed).length} / {(goalForm.challenges || []).length} Completed
-                </div>
-                <span className="text-[10px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60 block pt-1">
-                  Custom Reader Trackers
-                </span>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[#f5f1e3] dark:bg-[#25221e] border border-[#ebd9c5] dark:border-[#38332c] space-y-1">
-                <div className="flex items-center justify-between text-emerald-600">
-                  <span className="text-[11px] font-bold font-handwriting uppercase">Collection Value</span>
-                  <DollarSign className="w-4 h-4" />
-                </div>
-                <div className="text-2xl font-serif font-bold text-[#2a2724] dark:text-[#f5f2e6]">
-                  ${bookForestEntries.reduce((acc, curr) => acc + (curr.purchasePrice || 0), 0).toFixed(2)}
-                </div>
-                <span className="text-[10px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60 block pt-1">
-                  Physical & Virtual Editions
-                </span>
-              </div>
-            </div>
-
-            {/* Annual Goal Settings Form */}
-            <form onSubmit={handleSaveGoal} className="p-5 rounded-2xl bg-[#f5f1e3]/60 dark:bg-[#25221e]/60 border border-[#ebd9c5] dark:border-[#38332c] space-y-4">
-              <div className="flex items-center justify-between border-b border-[#ebd9c5] dark:border-[#38332c] pb-3">
-                <h3 className="font-serif font-bold text-base text-[#2a2724] dark:text-[#f5f2e6] flex items-center gap-2">
-                  <Target className="w-4 h-4 text-[#d4a373]" />
-                  <span>Configure Annual Goal & Page Targets</span>
-                </h3>
-                <button
-                  type="button"
-                  onClick={handleSyncCompletedWithBookForest}
-                  className="px-3 py-1.5 rounded-xl bg-[#2a2724] hover:bg-[#3d3834] text-[#d4a373] border border-[#d4a373]/40 text-[11px] font-bold flex items-center space-x-1"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Auto-Sync with BookForest</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div>
-                  <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
-                    Target Year
-                  </label>
-                  <input
-                    type="number"
-                    value={goalForm.year}
-                    onChange={(e) => setGoalForm(prev => ({ ...prev, year: Number(e.target.value) }))}
-                    className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
-                    Target Books
-                  </label>
-                  <input
-                    type="number"
-                    value={goalForm.targetBooks}
-                    onChange={(e) => setGoalForm(prev => ({ ...prev, targetBooks: Number(e.target.value) }))}
-                    className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
-                    Completed Books
-                  </label>
-                  <input
-                    type="number"
-                    value={goalForm.completedBooks}
-                    onChange={(e) => setGoalForm(prev => ({ ...prev, completedBooks: Number(e.target.value) }))}
-                    className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
-                    Target Pages
-                  </label>
-                  <input
-                    type="number"
-                    value={goalForm.targetPages || 8000}
-                    onChange={(e) => setGoalForm(prev => ({ ...prev, targetPages: Number(e.target.value) }))}
-                    className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
-                    Completed Pages
-                  </label>
-                  <input
-                    type="number"
-                    value={goalForm.completedPages || 0}
-                    onChange={(e) => setGoalForm(prev => ({ ...prev, completedPages: Number(e.target.value) }))}
-                    className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl font-bold bg-[#d4a373] hover:bg-[#c39262] text-[#fffef2] flex items-center space-x-2 shadow-sm transition-all"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>Save Goal Settings</span>
-                </button>
-              </div>
-            </form>
-
-            {/* Custom Reading Challenges Control Panel */}
-            <div className="p-5 rounded-2xl bg-[#f5f1e3]/60 dark:bg-[#25221e]/60 border border-[#ebd9c5] dark:border-[#38332c] space-y-4">
-              <div className="border-b border-[#ebd9c5] dark:border-[#38332c] pb-3">
-                <h3 className="font-serif font-bold text-base text-[#2a2724] dark:text-[#f5f2e6] flex items-center gap-2">
-                  <Award className="w-4 h-4 text-[#b07843]" />
-                  <span>Custom Reading Challenges & Goals</span>
-                </h3>
-                <p className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
-                  Track specialized reading endeavors like genre marathons, hardcover collecting, or classic literature reading goals.
-                </p>
-              </div>
-
-              {/* Active Challenges List */}
-              <div className="space-y-3">
-                {(goalForm.challenges || []).map((ch) => (
-                  <div
-                    key={ch.id}
-                    className="p-4 rounded-xl bg-[#fffef2] dark:bg-[#181614] border border-[#ebd9c5] dark:border-[#38332c] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div className="space-y-1.5 flex-1">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleChallenge(ch.id)}
-                          className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
-                            ch.completed
-                              ? 'bg-[#15803d] border-[#15803d] text-white'
-                              : 'border-[#ebd9c5] dark:border-[#38332c] bg-transparent'
-                          }`}
-                        >
-                          {ch.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                        </button>
-                        <span className={`font-serif text-sm font-bold ${ch.completed ? 'line-through text-[#2a2724]/50 dark:text-[#f5f2e6]/50' : 'text-[#2a2724] dark:text-[#f5f2e6]'}`}>
-                          {ch.title}
-                        </span>
-                        {ch.completed && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#15803d]/15 text-[#15803d] dark:text-[#4ade80]">
-                            Achieved!
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center space-x-3 text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70">
-                        <span>Progress: {ch.currentCount} / {ch.targetCount} books</span>
-                        <div className="w-32 h-2 rounded-full bg-[#ebd9c5] dark:bg-[#38332c] overflow-hidden">
-                          <div
-                            className="h-full bg-[#d4a373] transition-all"
-                            style={{ width: `${Math.min(100, Math.round((ch.currentCount / (ch.targetCount || 1)) * 100))}%` }}
-                          ></div>
+                        <div className="flex items-center space-x-2 shrink-0">
+                          <button
+                            onClick={() => handleToggleFrontPagePublished(book.id)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                              book.showOnFrontPage !== false
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                                : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                            }`}
+                          >
+                            {book.showOnFrontPage !== false ? '✓ Home Page' : '✕ Hidden'}
+                          </button>
+                          <button
+                            onClick={() => setEditingPublished(book)}
+                            className="px-3 py-1.5 rounded-xl bg-[#f5f1e3] dark:bg-[#25221e] hover:bg-[#ebd9c5] text-[#2a2724] dark:text-[#f5f2e6] border border-[#ebd9c5] dark:border-[#38332c] font-bold text-xs cursor-pointer"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeletePublishedBook(book.id, book.title)}
+                            className="p-1.5 rounded-xl hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
-                    </div>
+                    ))}
+                  </div>
+                </div>
 
-                    <div className="flex items-center space-x-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateChallengeProgress(ch.id, -1)}
-                        className="w-7 h-7 rounded-lg bg-[#f5f1e3] dark:bg-[#25221e] hover:bg-[#ebd9c5] border border-[#ebd9c5] dark:border-[#38332c] font-bold text-xs"
-                        title="Decrement Count"
+                {/* Upcoming Releases Sub-Section */}
+                <div className="space-y-4 pt-4">
+                  <div className="border-b border-[#ebd9c5] dark:border-[#38332c] pb-3">
+                    <h2 className="font-serif font-normal text-2xl text-[#2a2724] dark:text-[#f5f2e6]">
+                      Upcoming Releases &amp; WIPs ({upcomingBooks.length})
+                    </h2>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    {upcomingBooks.map((u) => (
+                      <div
+                        key={u.id}
+                        className="bg-[#fffef2] dark:bg-[#181614] p-4 rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
                       >
-                        -
+                        <div className="flex items-center space-x-4">
+                          <img src={u.coverUrl} alt={u.title} className="w-14 h-20 object-cover rounded-xl border border-[#ebd9c5] shrink-0" />
+                          <div className="space-y-1">
+                            <h3 className="font-serif text-base font-bold text-[#2a2724] dark:text-[#f5f2e6]">{u.title}</h3>
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#d4a373]/20 text-[#b07843] dark:text-[#d4a373]">
+                              Stage: {u.writingStage} ({u.progressPercentage}%)
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2 shrink-0">
+                          <button
+                            onClick={() => handlePublishUpcomingBook(u)}
+                            className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs cursor-pointer"
+                          >
+                            Publish Now
+                          </button>
+                          <button
+                            onClick={() => setEditingUpcoming(u)}
+                            className="px-3 py-1.5 rounded-xl bg-[#f5f1e3] dark:bg-[#25221e] hover:bg-[#ebd9c5] text-[#2a2724] dark:text-[#f5f2e6] border border-[#ebd9c5] dark:border-[#38332c] font-bold text-xs cursor-pointer"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUpcomingBook(u.id, u.title)}
+                            className="p-1.5 rounded-xl hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* BookForest Archive Sub-Section */}
+                <div className="space-y-4 pt-4">
+                  <div className="flex items-center justify-between border-b border-[#ebd9c5] dark:border-[#38332c] pb-3">
+                    <h2 className="font-serif font-normal text-2xl text-[#2a2724] dark:text-[#f5f2e6]">
+                      BookForest Archive Catalog ({bookForestEntries.length})
+                    </h2>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => exportBookForestJSON(bookForestEntries)}
+                        className="px-3 py-1.5 rounded-xl bg-[#2a2724] text-[#d4a373] hover:bg-[#3d3834] font-bold text-xs flex items-center space-x-1 cursor-pointer border border-[#d4a373]/40"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>JSON</span>
                       </button>
                       <button
-                        type="button"
-                        onClick={() => handleUpdateChallengeProgress(ch.id, 1)}
-                        className="w-7 h-7 rounded-lg bg-[#f5f1e3] dark:bg-[#25221e] hover:bg-[#ebd9c5] border border-[#ebd9c5] dark:border-[#38332c] font-bold text-xs"
-                        title="Increment Count"
+                        onClick={() => exportBookForestCSV(bookForestEntries)}
+                        className="px-3 py-1.5 rounded-xl bg-[#2a2724] text-[#d4a373] hover:bg-[#3d3834] font-bold text-xs flex items-center space-x-1 cursor-pointer border border-[#d4a373]/40"
                       >
-                        +
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>CSV</span>
                       </button>
                       <button
-                        type="button"
-                        onClick={() => handleDeleteChallenge(ch.id)}
-                        className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 transition-colors"
-                        title="Remove Challenge"
+                        onClick={onOpenAddBookForestModal}
+                        className="px-3.5 py-1.5 rounded-xl bg-[#15803d] text-[#fffef2] font-bold text-xs cursor-pointer"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        + Add Entry
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
 
-              {/* Add New Challenge Form */}
-              <form onSubmit={handleAddChallenge} className="pt-2 flex flex-col sm:flex-row items-end gap-3">
-                <div className="flex-1">
-                  <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
-                    New Challenge Goal Title
-                  </label>
-                  <input
-                    type="text"
-                    value={newChallengeTitle}
-                    onChange={(e) => setNewChallengeTitle(e.target.value)}
-                    placeholder="e.g., Read 5 Hardcover Award-Winning Novels"
-                    className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] outline-none"
-                  />
+                  <div className="grid grid-cols-1 gap-3">
+                    {bookForestEntries.slice(0, 10).map((bf) => (
+                      <div
+                        key={bf.id}
+                        className="bg-[#fffef2] dark:bg-[#181614] p-4 rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs flex items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <img src={bf.coverUrl} alt={bf.title} className="w-12 h-16 object-cover rounded-lg border border-[#ebd9c5] shrink-0" />
+                          <div>
+                            <h4 className="font-serif font-bold text-sm text-[#2a2724] dark:text-[#f5f2e6]">{bf.title}</h4>
+                            <p className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60">by {bf.author} • Rating: {'★'.repeat(bf.userRating)}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          {onEditBookForestEntry && (
+                            <button
+                              onClick={() => onEditBookForestEntry(bf)}
+                              className="px-3 py-1.5 rounded-xl bg-[#f5f1e3] dark:bg-[#25221e] hover:bg-[#ebd9c5] text-[#2a2724] dark:text-[#f5f2e6] border border-[#ebd9c5] dark:border-[#38332c] font-bold text-xs cursor-pointer"
+                            >
+                              Edit
+                            </button>
+                          )}
+                          {onDeleteBookForestEntry && (
+                            <button
+                              onClick={() => onDeleteBookForestEntry(bf.id)}
+                              className="p-1.5 rounded-xl hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="w-full sm:w-32">
-                  <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
-                    Target Count
-                  </label>
-                  <input
-                    type="number"
-                    value={newChallengeTarget}
-                    onChange={(e) => setNewChallengeTarget(Number(e.target.value))}
-                    min={1}
-                    className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] outline-none"
-                  />
+              </div>
+            }
+          />
+
+          {/* TAB 3: BOOKSHELF */}
+          <Route
+            path="bookshelf"
+            element={
+              <div className="space-y-6 text-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#ebd9c5] dark:border-[#38332c] pb-4">
+                  <div>
+                    <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#15803d]/15 text-[#15803d] dark:text-[#4ade80] font-handwriting">
+                      Personal Library &amp; Editions Tracker
+                    </span>
+                    <h2 className="font-serif font-normal text-2xl text-[#2a2724] dark:text-[#f5f2e6] pt-1">
+                      Personal Bookshelf &amp; Collections
+                    </h2>
+                    <p className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60 font-sans">
+                      Track physical shelves, special sprayed edges, signed copies, Kindle/Audible libraries, and wishlist items.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={onOpenAddBookForestModal}
+                      className="px-4 py-2 rounded-xl bg-[#15803d] hover:bg-[#166534] text-[#fffef2] font-bold text-xs flex items-center space-x-1.5 shadow-md cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Book to Shelf</span>
+                    </button>
+                  </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#2a2724] dark:bg-[#1f1d1a] hover:bg-[#3d3834] text-[#d4a373] border border-[#d4a373]/40 font-bold text-xs flex items-center justify-center space-x-1.5 shadow-xs"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Challenge</span>
-                </button>
-              </form>
-            </div>
+                {/* Filter by Collection Location */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                  {['All Locations', 'Physical Main Bookshelf', 'Physical Special Shelf', 'Kindle Library', 'Audible', 'Wishlist / Not Owned'].map((loc) => (
+                    <button
+                      key={loc}
+                      onClick={() => setSelectedLocationFilter(loc)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer border ${
+                        selectedLocationFilter === loc
+                          ? 'bg-[#2a2724] text-[#d4a373] border-[#d4a373]/40 shadow-xs'
+                          : 'bg-[#fffef2] dark:bg-[#181614] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 border-[#ebd9c5] dark:border-[#38332c] hover:bg-[#f5f1e3]'
+                      }`}
+                    >
+                      {loc}
+                    </button>
+                  ))}
+                </div>
 
-            {/* Library Data Backup & Export Panel */}
-            <div className="p-5 rounded-2xl bg-[#f5f1e3]/60 dark:bg-[#25221e]/60 border border-[#ebd9c5] dark:border-[#38332c] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <h3 className="font-serif font-bold text-base text-[#2a2724] dark:text-[#f5f2e6] flex items-center gap-2">
-                  <Download className="w-4 h-4 text-[#15803d]" />
-                  <span>Library Data Portability & Data Backup</span>
-                </h3>
-                <p className="text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70 max-w-2xl">
-                  Download your entire BookForest library database as a JSON backup or CSV spreadsheet to preserve your reading history, ratings, quotes, and physical book inventory.
-                </p>
+                {/* Visual Bookshelf Display Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {filteredBookshelfEntries.map((book) => (
+                    <div
+                      key={book.id}
+                      className="group relative bg-[#fffef2] dark:bg-[#181614] rounded-2xl p-3 border border-[#ebd9c5] dark:border-[#38332c] shadow-xs flex flex-col justify-between space-y-2 hover:shadow-md transition-all"
+                    >
+                      <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden shadow-sm border border-[#ebd9c5]/60">
+                        <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-md bg-[#2a2724]/80 text-[#d4a373] text-[10px] font-bold font-handwriting backdrop-blur-xs">
+                          ★ {book.userRating}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <h4 className="font-serif font-bold text-xs text-[#2a2724] dark:text-[#f5f2e6] line-clamp-1">{book.title}</h4>
+                        <p className="text-[11px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60 line-clamp-1">{book.author}</p>
+                        
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#ebd9c5]/40 dark:bg-[#38332c] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 font-mono line-clamp-1">
+                            {book.collectionLocation}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-[#ebd9c5]/40 dark:border-[#38332c]/40">
+                        <span className="text-[10px] font-bold text-[#15803d] dark:text-[#4ade80] capitalize">
+                          {book.readingStatus}
+                        </span>
+                        {onEditBookForestEntry && (
+                          <button
+                            onClick={() => onEditBookForestEntry(book)}
+                            className="p-1 text-[#2a2724]/60 hover:text-[#2a2724] dark:text-[#f5f2e6]/60 dark:hover:text-[#f5f2e6] cursor-pointer"
+                            title="Edit Entry"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
+            }
+          />
 
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => exportBookForestJSON(bookForestEntries)}
-                  className="px-4 py-2.5 rounded-xl bg-[#2a2724] text-[#d4a373] hover:bg-[#3d3834] font-bold text-xs flex items-center space-x-2 border border-[#d4a373]/50 shadow-md"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download JSON Backup</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => exportBookForestCSV(bookForestEntries)}
-                  className="px-4 py-2.5 rounded-xl bg-[#2a2724] text-[#d4a373] hover:bg-[#3d3834] font-bold text-xs flex items-center space-x-2 border border-[#d4a373]/50 shadow-md"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>Download CSV Spreadsheet</span>
-                </button>
+          {/* TAB 4: CLUBS */}
+          <Route
+            path="clubs"
+            element={
+              <div className="space-y-6">
+                <ClubsSection onImportToBookForest={dummyImport} />
               </div>
-            </div>
+            }
+          />
 
-          </div>
-        </div>
-      )}
-
-      {/* TAB 6: SITE ANNOUNCEMENTS */}
-      {activeTab === 'site' && (
-        <div className="bg-[#fbf9ee] dark:bg-[#221f1c] p-6 sm:p-8 rounded-3xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-6 text-xs">
-          <h2 className="font-serif font-normal text-2xl text-[#2a2724] dark:text-[#f5f2e6]">
-            Site Hero Banner & Announcements
-          </h2>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
-                Featured Hero Announcement Text
-              </label>
-              <input
-                type="text"
-                value={heroAnnouncement}
-                onChange={(e) => setHeroAnnouncement(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] outline-none"
-              />
-            </div>
-
-            <div className="p-4 bg-[#f5f1e3] dark:bg-[#25221e] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] space-y-2">
-              <span className="font-bold text-[#b07843] dark:text-[#d4a373] font-handwriting text-sm block">
-                Announcement Banner Live Preview
-              </span>
-              <div className="p-3 bg-[#2a2724] text-[#fffef2] rounded-xl text-xs flex items-center justify-between">
-                <span>📢 {heroAnnouncement}</span>
-                <span className="text-xs text-[#d4a373] font-handwriting">Live</span>
+          {/* TAB 5: REVIEWS */}
+          <Route
+            path="reviews"
+            element={
+              <div className="space-y-8">
+                <GoodreadsQuotesSection onImportToBookForest={dummyImport} />
               </div>
-            </div>
+            }
+          />
 
-            <button
-              onClick={() => showToast('Saved site announcement banner settings!')}
-              className="px-5 py-2.5 rounded-xl font-bold bg-[#d4a373] text-[#fffef2] flex items-center space-x-2"
-            >
-              <Save className="w-4 h-4" />
-              <span>Save Announcement</span>
-            </button>
-          </div>
-        </div>
-      )}
+          {/* TAB 6: POSTS */}
+          <Route
+            path="posts"
+            element={
+              <div className="space-y-6 text-xs">
+                <div className="p-6 rounded-3xl bg-[#fffef2] dark:bg-[#181614] border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-4">
+                  <h2 className="font-serif font-normal text-2xl text-[#2a2724] dark:text-[#f5f2e6]">
+                    Site Hero Announcements &amp; Posts
+                  </h2>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">
+                        Featured Hero Announcement Banner
+                      </label>
+                      <input
+                        type="text"
+                        value={heroAnnouncement}
+                        onChange={(e) => setHeroAnnouncement(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                      />
+                    </div>
+
+                    <div className="p-4 bg-[#f5f1e3] dark:bg-[#25221e] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] space-y-2">
+                      <span className="font-bold text-[#b07843] dark:text-[#d4a373] font-handwriting text-sm block">
+                        Live Banner Preview
+                      </span>
+                      <div className="p-3 bg-[#2a2724] text-[#fffef2] rounded-xl text-xs flex items-center justify-between">
+                        <span>📢 {heroAnnouncement}</span>
+                        <span className="text-xs text-[#d4a373] font-handwriting">Live</span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => showToast('Saved announcement banner!')}
+                      className="px-5 py-2.5 rounded-xl font-bold bg-[#d4a373] text-[#fffef2] flex items-center space-x-2 cursor-pointer"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>Save Post Announcement</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          />
+
+          {/* TAB 7: SETTINGS (PROFILE & ACCOUNT SETTINGS) */}
+          <Route
+            path="settings"
+            element={
+              <div className="space-y-6 text-xs">
+                <form onSubmit={handleSaveProfile} className="space-y-6">
+                  {/* Identity Card */}
+                  <div className="p-6 sm:p-8 rounded-3xl bg-[#fffef2] dark:bg-[#181614] border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-5">
+                    <div className="flex items-center justify-between border-b border-[#ebd9c5] dark:border-[#38332c] pb-4">
+                      <div>
+                        <h2 className="font-serif font-normal text-2xl text-[#2a2724] dark:text-[#f5f2e6]">
+                          Profile &amp; Account Settings
+                        </h2>
+                        <p className="text-[#2a2724]/60 dark:text-[#f5f2e6]/60 text-xs mt-0.5">
+                          Update name, pen name, accolades, full bio, avatar image, and featured quotes.
+                        </p>
+                      </div>
+                      <button
+                        type="submit"
+                        className="px-5 py-2.5 rounded-xl font-bold bg-[#d4a373] hover:bg-[#c39262] text-[#fffef2] flex items-center space-x-2 shadow-md cursor-pointer"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>Save Profile Settings</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">Public Author Name</label>
+                        <input
+                          type="text"
+                          value={profileForm.name}
+                          onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">Pen Name / Variant</label>
+                        <input
+                          type="text"
+                          value={profileForm.penName || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, penName: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                        />
+                      </div>
+
+                      <div className="col-span-1 md:col-span-2">
+                        <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">Title / Accolades</label>
+                        <input
+                          type="text"
+                          value={profileForm.title}
+                          onChange={(e) => setProfileForm({ ...profileForm, title: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                        />
+                      </div>
+
+                      <div className="col-span-1 md:col-span-2">
+                        <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">Full Biography</label>
+                        <textarea
+                          rows={4}
+                          value={profileForm.bio}
+                          onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
+                          className="w-full p-3 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none leading-relaxed"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">Avatar Image URL</label>
+                        <input
+                          type="text"
+                          value={profileForm.avatarUrl}
+                          onChange={(e) => setProfileForm({ ...profileForm, avatarUrl: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold mb-1 text-[#2a2724] dark:text-[#f5f2e6]">Featured Quote</label>
+                        <input
+                          type="text"
+                          value={profileForm.featuredQuote}
+                          onChange={(e) => setProfileForm({ ...profileForm, featuredQuote: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none font-serif"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </form>
+
+                {/* Social Handles Form */}
+                <div className="p-6 sm:p-8 rounded-3xl bg-[#fffef2] dark:bg-[#181614] border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-4">
+                  <h3 className="font-serif font-bold text-xl text-[#2a2724] dark:text-[#f5f2e6]">Social Media Profiles</h3>
+                  <div className="space-y-2">
+                    {(profileForm.socialLinks || []).map((link, idx) => (
+                      <div key={idx} className="p-3 rounded-xl bg-[#fbf9ee] dark:bg-[#221f1c] flex items-center justify-between border border-[#ebd9c5] dark:border-[#38332c]">
+                        <span className="font-bold text-[#2a2724] dark:text-[#f5f2e6]">{link.platform}: <span className="font-mono font-normal text-[#2a2724]/70 dark:text-[#f5f2e6]/70">{link.url}</span></span>
+                        <button type="button" onClick={() => handleDeleteSocialLink(idx)} className="p-1 text-red-600 cursor-pointer">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <form onSubmit={handleAddSocialLink} className="flex flex-col sm:flex-row items-end gap-3 pt-2">
+                    <div className="w-full sm:w-40">
+                      <label className="block font-bold mb-1">Platform</label>
+                      <input
+                        type="text"
+                        value={newSocialPlatform}
+                        onChange={(e) => setNewSocialPlatform(e.target.value)}
+                        placeholder="Substack"
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                      />
+                    </div>
+                    <div className="flex-1 w-full">
+                      <label className="block font-bold mb-1">URL</label>
+                      <input
+                        type="text"
+                        value={newSocialUrl}
+                        onChange={(e) => setNewSocialUrl(e.target.value)}
+                        placeholder="https://..."
+                        className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none font-mono"
+                      />
+                    </div>
+                    <button type="submit" className="px-4 py-2 rounded-xl bg-[#2a2724] text-[#d4a373] font-bold text-xs cursor-pointer">
+                      + Add Link
+                    </button>
+                  </form>
+                </div>
+              </div>
+            }
+          />
+
+          <Route path="edit" element={<Navigate to="/account/settings" replace />} />
+          <Route path="*" element={<Navigate to="/account" replace />} />
+        </Routes>
+      </div>
 
     </div>
   );

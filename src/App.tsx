@@ -230,9 +230,9 @@ export function App() {
             }
           />
 
-          {/* Writer Dashboard Page */}
+          {/* Author Account Portal Page */}
           <Route
-            path="/dashboard"
+            path="/account/*"
             element={
               isLoggedIn ? (
                 <WriterDashboardView
@@ -247,6 +247,7 @@ export function App() {
                   onUpdateReadingGoal={setReadingGoal}
                   onEditBookForestEntry={handleEditBookForestEntry}
                   onDeleteBookForestEntry={handleDeleteBookForestEntry}
+                  onSaveBookForestEntry={handleSaveBookForestEntry}
                   onOpenAddPortfolioModal={() => setIsAddPortfolioModalOpen(true)}
                   onOpenAddBookForestModal={() => {
                     setEditingBookForestEntry(null);
@@ -263,20 +264,21 @@ export function App() {
                   <div className="w-12 h-12 rounded-2xl bg-[#d4a373]/20 border border-[#d4a373]/40 flex items-center justify-center text-[#d4a373] mx-auto">
                     <Lock className="w-6 h-6 text-[#d4a373]" />
                   </div>
-                  <h2 className="text-2xl font-serif text-[#2a2724] dark:text-[#f5f2e6]">Writer Access Portal Required</h2>
+                  <h2 className="text-2xl font-serif text-[#2a2724] dark:text-[#f5f2e6]">Account Portal Authentication Required</h2>
                   <p className="text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70 leading-relaxed">
-                    The Writer Dashboard is restricted to the author. Please sign in with your passcode to modify author bio, manage bibliography, update works-in-progress, and edit BookForest catalog entries.
+                    The Account Portal is restricted to the author. Please sign in with your passcode to modify author bio, manage bibliography, update works-in-progress, and edit BookForest catalog entries.
                   </p>
                   <button
                     onClick={() => setIsLoginModalOpen(true)}
                     className="px-6 py-2.5 rounded-xl font-bold bg-[#d4a373] hover:bg-[#c39262] text-[#fffef2] text-xs shadow-md transition-all cursor-pointer"
                   >
-                    Sign In to Writer Dashboard
+                    Sign In to Account Portal
                   </button>
                 </div>
               )
             }
           />
+          <Route path="/dashboard/*" element={<Navigate to="/account" replace />} />
 
           {/* Catch-all Redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -289,7 +291,7 @@ export function App() {
         onClose={() => setIsLoginModalOpen(false)}
         onLoginSuccess={() => {
           setIsLoggedIn(true);
-          navigate('/dashboard');
+          navigate('/account');
         }}
       />
 
