@@ -8,6 +8,10 @@ import { SampleChapterModal } from './components/SampleChapterModal';
 import { AddPublishedBookModal } from './components/AddPublishedBookModal';
 import { AddBookForestModal } from './components/AddBookForestModal';
 import { AICompanionModal } from './components/AICompanionModal';
+import { GutenbergClassicsModal } from './components/GutenbergClassicsModal';
+import { FableLoungeModal } from './components/FableLoungeModal';
+import { OpenLibraryModal } from './components/OpenLibraryModal';
+import { StoryGraphModal } from './components/StoryGraphModal';
 import { LoginModal } from './components/LoginModal';
 import { Lock } from 'lucide-react';
 
@@ -18,6 +22,7 @@ import {
   INITIAL_BOOK_FOREST,
   INITIAL_READING_GOAL,
 } from './data/initialData';
+import { STORIZINE_WORKS } from './data/storizineData';
 
 import {
   PublishedBook,
@@ -53,6 +58,10 @@ export function App() {
   const [editingBookForestEntry, setEditingBookForestEntry] = useState<BookForestEntry | null>(null);
 
   const [isAICompanionOpen, setIsAICompanionOpen] = useState(false);
+  const [isGutenbergModalOpen, setIsGutenbergModalOpen] = useState(false);
+  const [isFableLoungeOpen, setIsFableLoungeOpen] = useState(false);
+  const [isOpenLibraryModalOpen, setIsOpenLibraryModalOpen] = useState(false);
+  const [isStoryGraphModalOpen, setIsStoryGraphModalOpen] = useState(false);
 
   // Dark Mode side effect
   useEffect(() => {
@@ -153,6 +162,7 @@ export function App() {
             upcomingBooks={upcomingBooks}
             onOpenSampleChapter={handleOpenSampleChapter}
             searchQuery={searchQuery}
+            onNavigateToStorizine={() => setActiveMainSection('storizine')}
           />
         )}
 
@@ -162,24 +172,49 @@ export function App() {
             publishedBooks={publishedBooks}
             upcomingBooks={upcomingBooks}
             onOpenSampleChapter={handleOpenSampleChapter}
+            onOpenFableLounge={() => setIsFableLoungeOpen(true)}
+            onOpenGutenbergModal={() => setIsGutenbergModalOpen(true)}
           />
         )}
         
         {activeMainSection === 'bookforest' && (
-          <BookForestView
-            entries={bookForestEntries}
-            readingGoal={readingGoal}
-            onOpenAddModal={() => {
-              setEditingBookForestEntry(null);
-              setIsAddBookForestModalOpen(true);
-            }}
-            onEditEntry={handleEditBookForestEntry}
-            onDeleteEntry={handleDeleteBookForestEntry}
-            onOpenAICompanion={() => setIsAICompanionOpen(true)}
-            searchQuery={searchQuery}
-            isLoggedIn={isLoggedIn}
-            onOpenLoginModal={() => setIsLoginModalOpen(true)}
-          />
+          isLoggedIn ? (
+            <BookForestView
+              entries={bookForestEntries}
+              readingGoal={readingGoal}
+              onOpenAddModal={() => {
+                setEditingBookForestEntry(null);
+                setIsAddBookForestModalOpen(true);
+              }}
+              onEditEntry={handleEditBookForestEntry}
+              onDeleteEntry={handleDeleteBookForestEntry}
+              onSaveEntry={handleSaveBookForestEntry}
+              onOpenAICompanion={() => setIsAICompanionOpen(true)}
+              onOpenGutenbergModal={() => setIsGutenbergModalOpen(true)}
+              onOpenFableLounge={() => setIsFableLoungeOpen(true)}
+              onOpenOpenLibraryModal={() => setIsOpenLibraryModalOpen(true)}
+              onOpenStoryGraphModal={() => setIsStoryGraphModalOpen(true)}
+              searchQuery={searchQuery}
+              isLoggedIn={isLoggedIn}
+              onOpenLoginModal={() => setIsLoginModalOpen(true)}
+            />
+          ) : (
+            <div className="bg-[#fbf9ee] dark:bg-[#221f1c] p-12 rounded-3xl border border-[#ebd9c5] dark:border-[#38332c] text-center max-w-lg mx-auto my-12 space-y-4 shadow-xl">
+              <div className="w-12 h-12 rounded-2xl bg-[#d4a373]/20 border border-[#d4a373]/40 flex items-center justify-center text-[#d4a373] mx-auto">
+                <Lock className="w-6 h-6 text-[#d4a373]" />
+              </div>
+              <h2 className="text-2xl font-serif text-[#2a2724] dark:text-[#f5f2e6]">Authentication Required</h2>
+              <p className="text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70 leading-relaxed">
+                The BookForest library, shelves, reading goals, quotes studio, and collection features are strictly accessible after logging in. Please sign in to access your personal shelf.
+              </p>
+              <button
+                onClick={() => setIsLoginModalOpen(true)}
+                className="px-6 py-2.5 rounded-xl font-bold bg-[#d4a373] hover:bg-[#c39262] text-[#fffef2] text-xs shadow-md transition-all"
+              >
+                Sign In to Access BookForest
+              </button>
+            </div>
+          )
         )}
 
         {activeMainSection === 'dashboard' && (
@@ -201,6 +236,11 @@ export function App() {
                 setEditingBookForestEntry(null);
                 setIsAddBookForestModalOpen(true);
               }}
+              onOpenGutenbergModal={() => setIsGutenbergModalOpen(true)}
+              onOpenOpenLibraryModal={() => setIsOpenLibraryModalOpen(true)}
+              onOpenStoryGraphModal={() => setIsStoryGraphModalOpen(true)}
+              onOpenFableLounge={() => setIsFableLoungeOpen(true)}
+              onOpenAICompanion={() => setIsAICompanionOpen(true)}
             />
           ) : (
             <div className="bg-[#fbf9ee] dark:bg-[#221f1c] p-12 rounded-3xl border border-[#ebd9c5] dark:border-[#38332c] text-center max-w-lg mx-auto my-12 space-y-4 shadow-xl">
@@ -264,6 +304,35 @@ export function App() {
         onClose={() => setIsAICompanionOpen(false)}
         bookForestEntries={bookForestEntries}
         onAddRecommendationToWantToRead={handleAddRecommendationToWantToRead}
+      />
+
+      {/* Project Gutenberg Ebooks Modal */}
+      <GutenbergClassicsModal
+        isOpen={isGutenbergModalOpen}
+        onClose={() => setIsGutenbergModalOpen(false)}
+        onImportToBookForest={handleSaveBookForestEntry}
+      />
+
+      {/* Fable Social Reading Lounge Modal */}
+      <FableLoungeModal
+        isOpen={isFableLoungeOpen}
+        onClose={() => setIsFableLoungeOpen(false)}
+        works={STORIZINE_WORKS}
+        onImportToBookForest={handleSaveBookForestEntry}
+      />
+
+      {/* Open Library Search Modal */}
+      <OpenLibraryModal
+        isOpen={isOpenLibraryModalOpen}
+        onClose={() => setIsOpenLibraryModalOpen(false)}
+        onImportToBookForest={handleSaveBookForestEntry}
+      />
+
+      {/* The StoryGraph Analytics Modal */}
+      <StoryGraphModal
+        isOpen={isStoryGraphModalOpen}
+        onClose={() => setIsStoryGraphModalOpen(false)}
+        entries={bookForestEntries}
       />
 
       {/* Minimal Warm Collector Footer */}

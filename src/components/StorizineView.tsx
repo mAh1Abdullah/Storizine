@@ -15,7 +15,9 @@ import {
   FileText,
   Compass,
   MapPin,
-  Bookmark
+  Bookmark,
+  Users,
+  Library
 } from 'lucide-react';
 import { STORIZINE_AUTHOR, STORIZINE_WORKS } from '../data/storizineData';
 import { StorizineWork, StorizineCategory, PublishedBook, UpcomingBook } from '../types';
@@ -25,13 +27,17 @@ interface StorizineViewProps {
   publishedBooks?: PublishedBook[];
   upcomingBooks?: UpcomingBook[];
   onOpenSampleChapter?: (book: PublishedBook) => void;
+  onOpenFableLounge?: () => void;
+  onOpenGutenbergModal?: () => void;
 }
 
 export const StorizineView: React.FC<StorizineViewProps> = ({ 
   searchQuery, 
   publishedBooks = [], 
   upcomingBooks = [],
-  onOpenSampleChapter
+  onOpenSampleChapter,
+  onOpenFableLounge,
+  onOpenGutenbergModal
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<StorizineCategory | 'All'>('All');
   const [localSearch, setLocalSearch] = useState('');
@@ -109,79 +115,31 @@ export const StorizineView: React.FC<StorizineViewProps> = ({
   }, [combinedWorks, selectedCategory, effectiveSearch]);
 
   return (
-    <div className="space-y-10 pb-16">
+    <div className="space-y-6 pb-16">
       
-      {/* STORIZINE Header & Author Showcase Banner */}
-      <section className="bg-gradient-to-br from-[#2a2724] via-[#38332c] to-[#1f1d1a] text-[#f5f2e6] rounded-3xl p-6 sm:p-10 border border-[#d4a373]/30 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#d4a373]/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          
-          {/* Author Details & Brand */}
-          <div className="lg:col-span-8 space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#d4a373] text-[#1f1d1a] tracking-widest uppercase flex items-center space-x-1.5 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>STORIZINE LITERARY EDITION</span>
-              </span>
-              <span className="text-xs text-[#d4a373] font-handwriting text-base">
-                by {STORIZINE_AUTHOR.name}
-              </span>
-            </div>
-
-            <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-[#fffef2] font-normal tracking-tight leading-tight">
-              STORIZINE <span className="font-handwriting text-[#d4a373] text-3xl sm:text-4xl">Literary Works</span>
-            </h1>
-
-            <p className="text-xs sm:text-sm text-[#f5f2e6]/80 leading-relaxed font-sans max-w-3xl">
-              {STORIZINE_AUTHOR.bio}
-            </p>
-
-            <div className="pt-2 flex flex-wrap items-center gap-4 text-xs text-[#d4a373]">
-              <div className="flex items-center space-x-1.5 bg-[#d4a373]/15 px-3 py-1.5 rounded-xl border border-[#d4a373]/30">
-                <MapPin className="w-3.5 h-3.5" />
-                <span>Sylhet, Bangladesh</span>
-              </div>
-              <div className="flex items-center space-x-1.5 bg-[#d4a373]/15 px-3 py-1.5 rounded-xl border border-[#d4a373]/30">
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>30 Published Titles</span>
-              </div>
-              <div className="flex items-center space-x-1.5 bg-[#d4a373]/15 px-3 py-1.5 rounded-xl border border-[#d4a373]/30">
-                <Globe className="w-3.5 h-3.5" />
-                <span>Fantasy • Sci-Fi • Thriller • Essays</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Stats & Highlight Card */}
-          <div className="lg:col-span-4 bg-[#181614]/80 p-6 rounded-2xl border border-[#d4a373]/30 text-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#d4a373]/20 border border-[#d4a373]/40 flex items-center justify-center text-[#d4a373] mx-auto shadow-inner">
-              <Feather className="w-8 h-8" />
-            </div>
-            <div>
-              <p className="text-xs text-[#d4a373] uppercase tracking-wider font-bold">Featured Catalog</p>
-              <h3 className="font-serif text-xl text-[#fffef2] mt-1">30 Original Writings</h3>
-              <p className="text-xs text-[#f5f2e6]/60 mt-1 font-handwriting text-sm">
-                From "Brave Boys Series" to "Virus &lt;evo&gt;"
-              </p>
-            </div>
-            <div className="pt-2 border-t border-[#d4a373]/20 flex justify-center space-x-3">
-              {STORIZINE_AUTHOR.socialLinks.map((link, idx) => (
-                <a
-                  key={idx}
-                  href={link.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-2.5 py-1 text-xs rounded-lg bg-[#2a2724] hover:bg-[#d4a373] hover:text-[#181614] text-[#d4a373] transition-colors border border-[#d4a373]/30"
-                >
-                  {link.platform}
-                </a>
-              ))}
-            </div>
-          </div>
-
+      {/* Compact Top Action Row */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-[#fbf9ee] dark:bg-[#221f1c] border border-[#ebd9c5] dark:border-[#38332c]">
+        <div>
+          <h1 className="font-serif font-bold text-xl text-[#2a2724] dark:text-[#f5f2e6]">
+            STORIZINE <span className="font-handwriting text-[#d4a373]">Literary Works</span>
+          </h1>
+          <p className="text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70 mt-0.5">
+            Complete catalog of published novels, short stories, cyberpunk sagas, and articles.
+          </p>
         </div>
-      </section>
+
+        <div className="flex items-center space-x-2 shrink-0">
+          {onOpenFableLounge && (
+            <button
+              onClick={onOpenFableLounge}
+              className="px-3.5 py-1.5 rounded-xl bg-[#d4a373] hover:bg-[#c39262] text-[#181614] font-bold text-xs flex items-center space-x-1.5 shadow-sm transition-all"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Clubs</span>
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Multiple Section Category Navigation Bar */}
       <section className="space-y-4">

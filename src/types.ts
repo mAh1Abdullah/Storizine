@@ -125,5 +125,6 @@ export interface ReadingGoal {
   completedBooks: number;
   targetPages?: number;
   completedPages?: number;
+  preferredGenres?: string[];
   challenges?: ReadingChallenge[];
 }

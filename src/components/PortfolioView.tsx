@@ -8,6 +8,7 @@ interface PortfolioViewProps {
   upcomingBooks: UpcomingBook[];
   onOpenSampleChapter: (book: PublishedBook) => void;
   searchQuery: string;
+  onNavigateToStorizine?: () => void;
 }
 
 export const PortfolioView: React.FC<PortfolioViewProps> = ({
@@ -16,6 +17,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   upcomingBooks,
   onOpenSampleChapter,
   searchQuery,
+  onNavigateToStorizine,
 }) => {
   const filteredPublished = publishedBooks.filter((b) => {
     const isShownOnFront = b.showOnFrontPage !== false;
@@ -209,9 +211,9 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           </p>
         </div>
 
-        {/* Published Books Cards Grid */}
+        {/* Published Books Cards Grid (Limited to 9 items) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPublished.map((book) => (
+          {filteredPublished.slice(0, 9).map((book) => (
             <div
               key={book.id}
               className="bg-[#fbf9ee] dark:bg-[#221f1c] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
@@ -320,6 +322,26 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
             </div>
           ))}
+        </div>
+
+        {/* Link to Storizine Page to see more */}
+        <div className="pt-4 text-center bg-[#fbf9ee] dark:bg-[#221f1c] p-6 rounded-3xl border border-[#ebd9c5] dark:border-[#38332c] flex flex-col items-center space-y-3 shadow-xs">
+          <div className="flex items-center space-x-2 text-[#d4a373] text-xs font-bold">
+            <Sparkles className="w-4 h-4" />
+            <span>FULL LITERARY CATALOG</span>
+          </div>
+          <p className="text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70 max-w-md">
+            Showing 9 of {filteredPublished.length} published titles. Visit the Storizine page to view all novels, series, short stories, and articles.
+          </p>
+          {onNavigateToStorizine && (
+            <button
+              onClick={onNavigateToStorizine}
+              className="px-6 py-3 rounded-2xl bg-[#2a2724] hover:bg-[#3d3834] text-[#d4a373] dark:bg-[#d4a373] dark:hover:bg-[#c39262] dark:text-[#181614] font-bold text-xs flex items-center space-x-2 shadow-md transition-all hover:scale-102"
+            >
+              <span>See More Published Books on Storizine Page</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </section>
 

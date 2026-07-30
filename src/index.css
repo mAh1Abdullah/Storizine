@@ -46,3 +46,39 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #bc8a5f;
 }
+
+/* Print Styles for PDF Generation */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  header, nav, button, .no-print, [role="tooltip"] {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .shadow-xs, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
+    box-shadow: none !important;
+  }
+
+  .bg-[#2a2724], .bg-[#181614], .bg-[#1f1d1a], .bg-[#fbf9ee], .bg-[#f5f1e3] {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #e5e7eb !important;
+  }
+
+  .text-[#fffef2], .text-[#f5f2e6], .text-[#d4a373] {
+    color: #111827 !important;
+  }
+
+  .border-[#ebd9c5], .border-[#38332c] {
+    border-color: #e5e7eb !important;
+  }
+
+  page-break-inside: avoid;
+}

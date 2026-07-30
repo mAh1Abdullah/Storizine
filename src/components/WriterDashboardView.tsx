@@ -31,9 +31,12 @@ import {
   TrendingUp,
   BarChart2,
   DollarSign,
+  Library,
+  Users,
   Check,
 } from 'lucide-react';
 import { exportBookForestJSON, exportBookForestCSV } from '../utils/exportUtils';
+import { ReaderGraphSection } from './ReaderGraphSection';
 
 interface WriterDashboardViewProps {
   author: AuthorProfile;
@@ -49,6 +52,11 @@ interface WriterDashboardViewProps {
   onDeleteBookForestEntry?: (id: string) => void;
   onOpenAddPortfolioModal: () => void;
   onOpenAddBookForestModal: () => void;
+  onOpenGutenbergModal?: () => void;
+  onOpenOpenLibraryModal?: () => void;
+  onOpenStoryGraphModal?: () => void;
+  onOpenFableLounge?: () => void;
+  onOpenAICompanion?: () => void;
 }
 
 export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
@@ -65,6 +73,11 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
   onDeleteBookForestEntry,
   onOpenAddPortfolioModal,
   onOpenAddBookForestModal,
+  onOpenGutenbergModal,
+  onOpenOpenLibraryModal,
+  onOpenStoryGraphModal,
+  onOpenFableLounge,
+  onOpenAICompanion,
 }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'published' | 'upcoming' | 'bookforest' | 'goals' | 'site'>('profile');
   const [savedSuccess, setSavedSuccess] = useState<string | null>(null);
@@ -222,47 +235,63 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
       currentCount: 0,
       completed: false,
     };
-    setGoalForm(prev => ({
-      ...prev,
-      challenges: [...(prev.challenges || []), newCh],
-    }));
+    setGoalForm(prev => {
+      const updated = {
+        ...prev,
+        challenges: [...(prev.challenges || []), newCh],
+      };
+      if (onUpdateReadingGoal) onUpdateReadingGoal(updated);
+      return updated;
+    });
     setNewChallengeTitle('');
     setNewChallengeTarget(5);
     showToast(`Added challenge "${newCh.title}"`);
   };
 
   const handleToggleChallenge = (id: string) => {
-    setGoalForm(prev => ({
-      ...prev,
-      challenges: (prev.challenges || []).map(ch => 
-        ch.id === id ? { ...ch, completed: !ch.completed } : ch
-      ),
-    }));
+    setGoalForm(prev => {
+      const updated = {
+        ...prev,
+        challenges: (prev.challenges || []).map(ch => 
+          ch.id === id ? { ...ch, completed: !ch.completed } : ch
+        ),
+      };
+      if (onUpdateReadingGoal) onUpdateReadingGoal(updated);
+      return updated;
+    });
   };
 
   const handleDeleteChallenge = (id: string) => {
-    setGoalForm(prev => ({
-      ...prev,
-      challenges: (prev.challenges || []).filter(ch => ch.id !== id),
-    }));
+    setGoalForm(prev => {
+      const updated = {
+        ...prev,
+        challenges: (prev.challenges || []).filter(ch => ch.id !== id),
+      };
+      if (onUpdateReadingGoal) onUpdateReadingGoal(updated);
+      return updated;
+    });
     showToast('Challenge removed.');
   };
 
   const handleUpdateChallengeProgress = (id: string, delta: number) => {
-    setGoalForm(prev => ({
-      ...prev,
-      challenges: (prev.challenges || []).map(ch => {
-        if (ch.id === id) {
-          const nextCount = Math.max(0, ch.currentCount + delta);
-          return {
-            ...ch,
-            currentCount: nextCount,
-            completed: nextCount >= ch.targetCount,
-          };
-        }
-        return ch;
-      }),
-    }));
+    setGoalForm(prev => {
+      const updated = {
+        ...prev,
+        challenges: (prev.challenges || []).map(ch => {
+          if (ch.id === id) {
+            const nextCount = Math.max(0, ch.currentCount + delta);
+            return {
+              ...ch,
+              currentCount: nextCount,
+              completed: nextCount >= ch.targetCount,
+            };
+          }
+          return ch;
+        }),
+      };
+      if (onUpdateReadingGoal) onUpdateReadingGoal(updated);
+      return updated;
+    });
   };
 
   return (
@@ -294,24 +323,6 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
           <p className="text-xs sm:text-sm text-[#f5f2e6]/80 max-w-xl font-sans">
             Instantly manage bio, published bibliography, upcoming release milestones, sample chapters, and web content.
           </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={onOpenAddPortfolioModal}
-            className="px-4 py-2.5 rounded-xl bg-[#d4a373] hover:bg-[#c39262] text-[#fffef2] font-bold text-xs flex items-center space-x-2 shadow-md transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Author Book</span>
-          </button>
-
-          <button
-            onClick={onOpenAddBookForestModal}
-            className="px-4 py-2.5 rounded-xl bg-[#2a2724] hover:bg-[#3d3834] text-[#d4a373] border border-[#d4a373]/50 font-bold text-xs flex items-center space-x-2 shadow-md transition-all"
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Add BookForest Entry</span>
-          </button>
         </div>
       </div>
 

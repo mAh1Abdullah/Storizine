@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Library,
+  Library as LibraryIcon,
   BookOpen,
   CheckCircle2,
   Clock,
@@ -20,22 +20,17 @@ import {
   List,
   Check,
   Building,
-  Download,
-  FileText
+  Users,
+  Globe,
+  Trophy,
+  Quote,
+  PieChart as PieIcon
 } from 'lucide-react';
-import { exportBookForestJSON, exportBookForestCSV } from '../utils/exportUtils';
-import {
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-} from 'recharts';
+import { LibrarySection } from './LibrarySection';
+import { ClubsSection } from './ClubsSection';
+import { ReaderGraphSection } from './ReaderGraphSection';
+import { GoodreadsChoiceAwardsSection } from './GoodreadsChoiceAwardsSection';
+import { GoodreadsQuotesSection } from './GoodreadsQuotesSection';
 import { BookForestEntry, ReadingStatus, CollectionLocation, BookFormat, ReadingGoal } from '../types';
 
 interface BookForestViewProps {
@@ -45,6 +40,11 @@ interface BookForestViewProps {
   onEditEntry: (entry: BookForestEntry) => void;
   onDeleteEntry: (id: string) => void;
   onOpenAICompanion: () => void;
+  onSaveEntry?: (entry: BookForestEntry) => void;
+  onOpenGutenbergModal?: () => void;
+  onOpenFableLounge?: () => void;
+  onOpenOpenLibraryModal?: () => void;
+  onOpenStoryGraphModal?: () => void;
   searchQuery: string;
   isLoggedIn: boolean;
   onOpenLoginModal: () => void;
@@ -57,14 +57,32 @@ export const BookForestView: React.FC<BookForestViewProps> = ({
   onEditEntry,
   onDeleteEntry,
   onOpenAICompanion,
+  onSaveEntry,
+  onOpenGutenbergModal,
+  onOpenFableLounge,
+  onOpenOpenLibraryModal,
+  onOpenStoryGraphModal,
   searchQuery,
   isLoggedIn,
   onOpenLoginModal,
 }) => {
-  const [subTab, setSubTab] = useState<'shelf' | 'collection' | 'analytics'>('shelf');
+  const [subTab, setSubTab] = useState<'shelf' | 'choice-awards' | 'quotes' | 'library' | 'clubs' | 'collection' | 'analytics'>('shelf');
   const [statusFilter, setStatusFilter] = useState<ReadingStatus | 'all'>('all');
   const [locationFilter, setLocationFilter] = useState<CollectionLocation | 'all'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  const handleImportEntry = (entry: BookForestEntry) => {
+    if (onSaveEntry) {
+      onSaveEntry(entry);
+    }
+  };
+
+  const handleQuickStatusChange = (book: BookForestEntry, newStatus: ReadingStatus) => {
+    const updated = { ...book, readingStatus: newStatus };
+    if (onSaveEntry) {
+      onSaveEntry(updated);
+    }
+  };
 
   // Filter logic
   const filteredEntries = entries.filter((item) => {
@@ -121,96 +139,93 @@ export const BookForestView: React.FC<BookForestViewProps> = ({
   const COLORS = ['#047857', '#d97706', '#2563eb', '#7c3aed', '#db2777', '#059669'];
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-6 pb-16">
       
-      {/* BookForest Top Header Banner */}
-      <div className="rounded-3xl bg-[#2a2724] dark:bg-[#1f1d1a] text-[#f5f2e6] p-6 sm:p-10 shadow-xl border border-[#d4a373]/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#d4a373]/20 text-[#d4a373] border border-[#d4a373]/30 font-handwriting">
-              Personal Goodreads & Collection Catalog
-            </span>
-            <span className="text-xs text-[#d4a373] font-semibold font-handwriting">
-              {entries.length} Total Books Archived
-            </span>
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl font-normal font-serif text-[#fffef2] tracking-tight">
-            BookForest Personal Library
-          </h1>
-          <p className="text-xs sm:text-sm text-[#f5f2e6]/80 max-w-xl font-sans">
-            Track books you want to read, rate completed titles with personal comments, and organize physical vs. virtual edition collections.
-          </p>
-        </div>
-
-        {/* AI Quick Trigger & Export Backup */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={onOpenAICompanion}
-            className="px-4 py-2.5 rounded-xl bg-[#2a2724] hover:bg-[#3d3834] text-[#d4a373] border border-[#d4a373]/50 font-bold text-xs flex items-center space-x-2 shadow-md transition-all"
-          >
-            <Sparkles className="w-4 h-4 text-[#d4a373]" />
-            <span>AI Review Helper</span>
-          </button>
-
-          <div className="flex items-center space-x-1.5 p-1 rounded-xl bg-[#181614]/60 border border-[#d4a373]/30">
-            <button
-              onClick={() => exportBookForestJSON(entries)}
-              className="px-3 py-1.5 rounded-lg bg-[#d4a373]/20 hover:bg-[#d4a373] text-[#d4a373] hover:text-[#181614] text-[11px] font-bold flex items-center space-x-1 transition-all"
-              title="Download full library as JSON file"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Backup JSON</span>
-            </button>
-            <button
-              onClick={() => exportBookForestCSV(entries)}
-              className="px-3 py-1.5 rounded-lg bg-[#d4a373]/20 hover:bg-[#d4a373] text-[#d4a373] hover:text-[#181614] text-[11px] font-bold flex items-center space-x-1 transition-all"
-              title="Export full library as CSV spreadsheet"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Export CSV</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Sub-Navigation Tabs */}
+      {/* Sub-Navigation Tabs & Quick Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#ebd9c5] dark:border-[#2e2a25] pb-3">
-        <div className="flex items-center space-x-2 p-1 bg-[#f5f1e3] dark:bg-[#25221e] rounded-xl border border-[#ebd9c5] dark:border-[#38332c]">
+        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-[#f5f1e3] dark:bg-[#25221e] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c]">
           <button
             onClick={() => setSubTab('shelf')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
               subTab === 'shelf'
                 ? 'bg-[#fffef2] dark:bg-[#181614] text-[#15803d] dark:text-[#4ade80] shadow-xs border border-[#ebd9c5] dark:border-[#38332c]'
                 : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
             }`}
           >
             <BookOpen className="w-3.5 h-3.5" />
-            <span>Bookshelf Tracker</span>
+            <span>Bookshelf</span>
+          </button>
+
+          <button
+            onClick={() => setSubTab('choice-awards')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+              subTab === 'choice-awards'
+                ? 'bg-[#fffef2] dark:bg-[#181614] text-[#d4a373] shadow-xs border border-[#ebd9c5] dark:border-[#38332c]'
+                : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
+            }`}
+          >
+            <Trophy className="w-3.5 h-3.5" />
+            <span>Awards</span>
+          </button>
+
+          <button
+            onClick={() => setSubTab('quotes')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+              subTab === 'quotes'
+                ? 'bg-[#fffef2] dark:bg-[#181614] text-[#d4a373] shadow-xs border border-[#ebd9c5] dark:border-[#38332c]'
+                : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
+            }`}
+          >
+            <Quote className="w-3.5 h-3.5" />
+            <span>Quotes</span>
+          </button>
+
+          <button
+            onClick={() => setSubTab('library')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+              subTab === 'library'
+                ? 'bg-[#fffef2] dark:bg-[#181614] text-[#0284c7] dark:text-[#38bdf8] shadow-xs border border-[#ebd9c5] dark:border-[#38332c]'
+                : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
+            }`}
+          >
+            <LibraryIcon className="w-3.5 h-3.5" />
+            <span>Library</span>
+          </button>
+
+          <button
+            onClick={() => setSubTab('clubs')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+              subTab === 'clubs'
+                ? 'bg-[#fffef2] dark:bg-[#181614] text-[#d4a373] shadow-xs border border-[#ebd9c5] dark:border-[#38332c]'
+                : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>Clubs</span>
           </button>
 
           <button
             onClick={() => setSubTab('collection')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
               subTab === 'collection'
                 ? 'bg-[#fffef2] dark:bg-[#181614] text-[#8c5627] dark:text-[#d4a373] shadow-xs border border-[#ebd9c5] dark:border-[#38332c]'
                 : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>Physical & Virtual Editions</span>
+            <span>Collections</span>
           </button>
 
           <button
             onClick={() => setSubTab('analytics')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
               subTab === 'analytics'
-                ? 'bg-[#fffef2] dark:bg-[#181614] text-[#d4a373] shadow-xs border border-[#ebd9c5] dark:border-[#38332c]'
+                ? 'bg-[#fffef2] dark:bg-[#181614] text-[#7c3aed] dark:text-[#a78bfa] shadow-xs border border-[#ebd9c5] dark:border-[#38332c]'
                 : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
             }`}
           >
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>Reading Goal & Stats</span>
+            <PieIcon className="w-3.5 h-3.5" />
+            <span>Stats</span>
           </button>
         </div>
 
@@ -302,15 +317,22 @@ export const BookForestView: React.FC<BookForestViewProps> = ({
                       />
                       <div className="space-y-1.5 text-xs flex-1">
                         <div className="flex items-center justify-between">
-                          <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase font-handwriting ${
-                            book.readingStatus === 'read'
-                              ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-300'
-                              : book.readingStatus === 'currently-reading'
-                              ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300'
-                              : 'bg-stone-200 text-stone-800 dark:bg-stone-800 dark:text-stone-300'
-                          }`}>
-                            {book.readingStatus.replace('-', ' ')}
-                          </span>
+                          <select
+                            value={book.readingStatus}
+                            onChange={(e) => handleQuickStatusChange(book, e.target.value as ReadingStatus)}
+                            className={`px-2 py-0.5 rounded text-xs font-bold uppercase font-handwriting outline-none cursor-pointer border border-transparent hover:border-current transition-all ${
+                              book.readingStatus === 'read'
+                                ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-300'
+                                : book.readingStatus === 'currently-reading'
+                                ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300'
+                                : 'bg-stone-200 text-stone-800 dark:bg-stone-800 dark:text-stone-300'
+                            }`}
+                          >
+                            <option value="want-to-read">Want to Read</option>
+                            <option value="currently-reading">Currently Reading</option>
+                            <option value="read">Read</option>
+                            <option value="did-not-finish">Did Not Finish</option>
+                          </select>
 
                           {isLoggedIn && (
                             <div className="flex items-center space-x-1">
@@ -570,91 +592,29 @@ export const BookForestView: React.FC<BookForestViewProps> = ({
         </div>
       )}
 
-      {/* SUB-TAB 3: READING GOAL & STATS */}
+      {/* SUB-TAB: GOODREADS CHOICE AWARDS */}
+      {subTab === 'choice-awards' && (
+        <GoodreadsChoiceAwardsSection onImportToBookForest={handleImportEntry} />
+      )}
+
+      {/* SUB-TAB: GOODREADS QUOTES & CARD STUDIO */}
+      {subTab === 'quotes' && (
+        <GoodreadsQuotesSection onImportToBookForest={handleImportEntry} />
+      )}
+
+      {/* SUB-TAB 2: UNIFIED DIGITAL LIBRARY */}
+      {subTab === 'library' && (
+        <LibrarySection onImportToBookForest={handleImportEntry} />
+      )}
+
+      {/* SUB-TAB 3: FABLE READING CLUBS & LOUNGE */}
+      {subTab === 'clubs' && (
+        <ClubsSection onImportToBookForest={handleImportEntry} />
+      )}
+
+      {/* SUB-TAB 5: READER GRAPH ANALYTICS & STATS */}
       {subTab === 'analytics' && (
-        <div className="space-y-8">
-          
-          {/* Annual Challenge Card */}
-          <div className="p-6 bg-[#2a2724] dark:bg-[#1f1d1a] text-[#f5f2e6] rounded-3xl shadow-lg border border-[#d4a373]/30 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="space-y-2 text-center md:text-left">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#d4a373]/20 text-[#d4a373] font-handwriting">
-                {readingGoal.year} Annual Reading Challenge
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-normal font-serif text-[#fffef2]">
-                {statusCounts.read} of {readingGoal.targetBooks} Books Finished
-              </h2>
-              <p className="text-xs text-[#f5f2e6]/80">
-                You are on track to achieve your {readingGoal.year} personal reading challenge!
-              </p>
-            </div>
-
-            <div className="w-full md:w-64 space-y-2">
-              <div className="flex justify-between text-xs font-bold">
-                <span>Completion Rate</span>
-                <span className="font-mono text-[#d4a373]">
-                  {Math.round((statusCounts.read / readingGoal.targetBooks) * 100)}%
-                </span>
-              </div>
-              <div className="w-full bg-[#181614] h-3 rounded-full overflow-hidden p-0.5 border border-[#d4a373]/40">
-                <div
-                  className="bg-[#d4a373] h-full rounded-full transition-all duration-700"
-                  style={{ width: `${Math.round((statusCounts.read / readingGoal.targetBooks) * 100)}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Recharts Data Visualization */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Status Breakdown Pie Chart */}
-            <div className="bg-[#fbf9ee] dark:bg-[#221f1c] p-6 rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-4">
-              <h3 className="font-normal font-serif text-xl text-[#2a2724] dark:text-[#f5f2e6]">
-                Reading Status Breakdown
-              </h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={statusChartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {statusChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Formats Owned Distribution Bar Chart */}
-            <div className="bg-[#fbf9ee] dark:bg-[#221f1c] p-6 rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-4">
-              <h3 className="font-normal font-serif text-xl text-[#2a2724] dark:text-[#f5f2e6]">
-                Owned Collection Formats
-              </h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={formatChartData}>
-                    <XAxis dataKey="format" tick={{ fontSize: 10 }} />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#d4a373" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
+        <ReaderGraphSection entries={entries} readingGoal={readingGoal} />
       )}
 
     </div>

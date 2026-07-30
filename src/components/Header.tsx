@@ -124,7 +124,7 @@ export const Header: React.FC<HeaderProps> = ({
                 title="Go to Writer Dashboard"
               >
                 <LayoutDashboard className="w-3.5 h-3.5 text-[#d4a373]" />
-                <span className="hidden sm:inline">Writer Dashboard</span>
+                <span className="hidden sm:inline">Dashboard</span>
               </button>
 
               <button
