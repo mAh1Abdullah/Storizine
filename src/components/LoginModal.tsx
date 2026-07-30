@@ -80,17 +80,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </div>
 
           <p className="text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70 leading-relaxed bg-[#f5f1e3] dark:bg-[#25221e] p-3 rounded-xl border border-[#ebd9c5] dark:border-[#38332c]">
-            🔒 Authenticate as author to gain full access to the Writer Dashboard for dynamic website editing, adding published books, managing works-in-progress, and editing BookForest entries.
+            🔒 Authenticate as author to gain full access to the Account Portal for dynamic website editing, adding published books, managing works-in-progress, and editing BookForest entries.
           </p>
 
           <div className="space-y-2 pt-2">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2.5 rounded-xl font-bold bg-[#d4a373] hover:bg-[#c39262] text-[#fffef2] shadow-md transition-all flex items-center justify-center space-x-2 text-xs"
+              className="w-full py-2.5 rounded-xl font-bold bg-[#d4a373] hover:bg-[#c39262] text-[#fffef2] shadow-md transition-all flex items-center justify-center space-x-2 text-xs cursor-pointer"
             >
               <Lock className="w-3.5 h-3.5" />
-              <span>{isSubmitting ? 'Authenticating...' : 'Sign In to Writer Dashboard'}</span>
+              <span>{isSubmitting ? 'Authenticating...' : 'Sign In to Account Portal'}</span>
             </button>
 
             <button

@@ -234,7 +234,7 @@ export const ReaderGraphSection: React.FC<ReaderGraphSectionProps> = ({
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 whitespace-nowrap ${
                 isActive
                   ? 'bg-[#2a2724] text-[#d4a373] shadow-sm'
-                  : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724]'
+                  : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -483,7 +483,16 @@ export const ReaderGraphSection: React.FC<ReaderGraphSectionProps> = ({
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#2a2724',
+                        borderColor: '#d4a373',
+                        borderRadius: '12px',
+                        color: '#f5f2e6',
+                        fontSize: '12px',
+                      }}
+                      itemStyle={{ color: '#d4a373' }}
+                    />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -502,7 +511,16 @@ export const ReaderGraphSection: React.FC<ReaderGraphSectionProps> = ({
                   <BarChart data={formatChartData}>
                     <XAxis dataKey="format" tick={{ fontSize: 10 }} />
                     <YAxis allowDecimals={false} />
-                    <Tooltip />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#2a2724',
+                        borderColor: '#d4a373',
+                        borderRadius: '12px',
+                        color: '#f5f2e6',
+                        fontSize: '12px',
+                      }}
+                      itemStyle={{ color: '#d4a373' }}
+                    />
                     <Bar dataKey="count" fill="#d4a373" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
