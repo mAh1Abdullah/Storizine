@@ -179,7 +179,11 @@ export function App() {
               <StorizineView
                 searchQuery={searchQuery}
                 publishedBooks={publishedBooks}
+                onUpdatePublishedBooks={setPublishedBooks}
                 upcomingBooks={upcomingBooks}
+                onUpdateUpcomingBooks={setUpcomingBooks}
+                isLoggedIn={isLoggedIn}
+                onOpenAddPortfolioModal={() => setIsAddPortfolioModalOpen(true)}
                 onOpenSampleChapter={handleOpenSampleChapter}
                 onOpenFableLounge={() => setIsFableLoungeOpen(true)}
                 onOpenGutenbergModal={() => setIsGutenbergModalOpen(true)}

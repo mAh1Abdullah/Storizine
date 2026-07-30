@@ -17,7 +17,14 @@ import {
   MapPin,
   Bookmark,
   Users,
-  Library
+  Library,
+  Plus,
+  Edit3,
+  Trash2,
+  Save,
+  Check,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { STORIZINE_AUTHOR, STORIZINE_WORKS } from '../data/storizineData';
 import { StorizineWork, StorizineCategory, PublishedBook, UpcomingBook } from '../types';
@@ -25,7 +32,11 @@ import { StorizineWork, StorizineCategory, PublishedBook, UpcomingBook } from '.
 interface StorizineViewProps {
   searchQuery: string;
   publishedBooks?: PublishedBook[];
+  onUpdatePublishedBooks?: (books: PublishedBook[]) => void;
   upcomingBooks?: UpcomingBook[];
+  onUpdateUpcomingBooks?: (books: UpcomingBook[]) => void;
+  isLoggedIn?: boolean;
+  onOpenAddPortfolioModal?: () => void;
   onOpenSampleChapter?: (book: PublishedBook) => void;
   onOpenFableLounge?: () => void;
   onOpenGutenbergModal?: () => void;
@@ -34,7 +45,11 @@ interface StorizineViewProps {
 export const StorizineView: React.FC<StorizineViewProps> = ({ 
   searchQuery, 
   publishedBooks = [], 
+  onUpdatePublishedBooks,
   upcomingBooks = [],
+  onUpdateUpcomingBooks,
+  isLoggedIn = false,
+  onOpenAddPortfolioModal,
   onOpenSampleChapter,
   onOpenFableLounge,
   onOpenGutenbergModal
@@ -42,6 +57,10 @@ export const StorizineView: React.FC<StorizineViewProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<StorizineCategory | 'All'>('All');
   const [localSearch, setLocalSearch] = useState('');
   const [selectedWork, setSelectedWork] = useState<StorizineWork | null>(null);
+
+  // Editing state for published/upcoming book
+  const [editingPublished, setEditingPublished] = useState<PublishedBook | null>(null);
+  const [editingUpcoming, setEditingUpcoming] = useState<UpcomingBook | null>(null);
 
   // Combine static Storizine works with live published & upcoming books
   const combinedWorks = useMemo<StorizineWork[]>(() => {
@@ -114,6 +133,55 @@ export const StorizineView: React.FC<StorizineViewProps> = ({
     });
   }, [combinedWorks, selectedCategory, effectiveSearch]);
 
+  // Edit / Delete handlers for Published Work
+  const handleEditWorkClick = (e: React.MouseEvent, work: StorizineWork) => {
+    e.stopPropagation();
+    if (work.id.startsWith('pub-')) {
+      const rawId = work.id.replace('pub-', '');
+      const pubBook = publishedBooks.find(b => b.id === rawId);
+      if (pubBook) setEditingPublished(pubBook);
+    } else if (work.id.startsWith('up-')) {
+      const rawId = work.id.replace('up-', '');
+      const upBook = upcomingBooks.find(u => u.id === rawId);
+      if (upBook) setEditingUpcoming(upBook);
+    }
+  };
+
+  const handleDeleteWorkClick = (e: React.MouseEvent, work: StorizineWork) => {
+    e.stopPropagation();
+    if (work.id.startsWith('pub-')) {
+      const rawId = work.id.replace('pub-', '');
+      if (window.confirm(`Delete "${work.title}" from published works?`)) {
+        if (onUpdatePublishedBooks) {
+          onUpdatePublishedBooks(publishedBooks.filter(b => b.id !== rawId));
+        }
+      }
+    } else if (work.id.startsWith('up-')) {
+      const rawId = work.id.replace('up-', '');
+      if (window.confirm(`Delete upcoming release "${work.title}"?`)) {
+        if (onUpdateUpcomingBooks) {
+          onUpdateUpcomingBooks(upcomingBooks.filter(u => u.id !== rawId));
+        }
+      }
+    }
+  };
+
+  const handleSavePublishedBookSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPublished || !onUpdatePublishedBooks) return;
+    const updated = publishedBooks.map(b => (b.id === editingPublished.id ? editingPublished : b));
+    onUpdatePublishedBooks(updated);
+    setEditingPublished(null);
+  };
+
+  const handleSaveUpcomingBookSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUpcoming || !onUpdateUpcomingBooks) return;
+    const updated = upcomingBooks.map(u => (u.id === editingUpcoming.id ? editingUpcoming : u));
+    onUpdateUpcomingBooks(updated);
+    setEditingUpcoming(null);
+  };
+
   return (
     <div className="space-y-6 pb-16">
       
@@ -128,11 +196,22 @@ export const StorizineView: React.FC<StorizineViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center space-x-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {/* Add Published Work Button for Logged-In Author */}
+          {isLoggedIn && onOpenAddPortfolioModal && (
+            <button
+              onClick={onOpenAddPortfolioModal}
+              className="px-3.5 py-1.5 rounded-xl bg-[#d4a373] hover:bg-[#c39262] text-[#fffef2] font-bold text-xs flex items-center space-x-1.5 shadow-md transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Published Work</span>
+            </button>
+          )}
+
           {onOpenFableLounge && (
             <button
               onClick={onOpenFableLounge}
-              className="px-3.5 py-1.5 rounded-xl bg-[#d4a373] hover:bg-[#c39262] text-[#181614] font-bold text-xs flex items-center space-x-1.5 shadow-sm transition-all"
+              className="px-3.5 py-1.5 rounded-xl bg-[#2a2724] hover:bg-[#3d3834] text-[#d4a373] border border-[#d4a373]/40 font-bold text-xs flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer"
             >
               <Users className="w-3.5 h-3.5" />
               <span>Clubs</span>
@@ -225,287 +304,368 @@ export const StorizineView: React.FC<StorizineViewProps> = ({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredWorks.map((work) => (
-              <div
-                key={work.id}
-                onClick={() => setSelectedWork(work)}
-                className="group bg-[#fffef2] dark:bg-[#1f1d1a] border border-[#ebd9c5] dark:border-[#38332c] rounded-3xl overflow-hidden hover:shadow-2xl hover:border-[#d4a373]/60 transition-all cursor-pointer flex flex-col justify-between"
-              >
-                <div>
-                  {/* Book Cover Banner & Overlay Badge */}
-                  <div className="relative h-56 w-full bg-[#181614] overflow-hidden">
-                    <img
-                      src={work.coverUrl}
-                      alt={work.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#181614] via-[#181614]/30 to-transparent" />
-                    
-                    {/* Top Badges */}
-                    <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                      <span className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-[#181614]/80 backdrop-blur-md text-[#d4a373] border border-[#d4a373]/30">
-                        #{work.number}
-                      </span>
-                      {work.featured && (
-                        <span className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-[#d4a373] text-[#181614] flex items-center space-x-1 shadow-md">
-                          <Flame className="w-3 h-3" />
-                          <span>Featured</span>
+            {filteredWorks.map((work) => {
+              const isEditable = isLoggedIn && (work.id.startsWith('pub-') || work.id.startsWith('up-'));
+              return (
+                <div
+                  key={work.id}
+                  onClick={() => setSelectedWork(work)}
+                  className="group bg-[#fffef2] dark:bg-[#1f1d1a] border border-[#ebd9c5] dark:border-[#38332c] rounded-3xl overflow-hidden hover:shadow-2xl hover:border-[#d4a373]/60 transition-all cursor-pointer flex flex-col justify-between"
+                >
+                  <div>
+                    {/* Book Cover Banner & Overlay Badge */}
+                    <div className="relative h-56 w-full bg-[#181614] overflow-hidden">
+                      <img
+                        src={work.coverUrl}
+                        alt={work.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#181614] via-[#181614]/30 to-transparent" />
+                      
+                      {/* Top Badges & Author Controls */}
+                      <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
+                        <span className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-[#181614]/80 backdrop-blur-md text-[#d4a373] border border-[#d4a373]/30">
+                          #{work.number}
                         </span>
-                      )}
+
+                        <div className="flex items-center space-x-1.5">
+                          {work.featured && (
+                            <span className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-[#d4a373] text-[#181614] flex items-center space-x-1 shadow-md">
+                              <Flame className="w-3 h-3" />
+                              <span>Featured</span>
+                            </span>
+                          )}
+
+                          {/* Inline Author Edit/Delete Controls */}
+                          {isEditable && (
+                            <div className="flex items-center space-x-1 bg-[#181614]/90 p-1 rounded-xl border border-[#d4a373]/40 backdrop-blur-md">
+                              <button
+                                onClick={(e) => handleEditWorkClick(e, work)}
+                                className="p-1 rounded-lg hover:bg-[#d4a373]/20 text-[#d4a373] transition-colors"
+                                title="Edit Work Details"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteWorkClick(e, work)}
+                                className="p-1 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors"
+                                title="Delete Work"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Bottom Title Bar over Cover */}
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#d4a373]">
+                          {work.category} {work.subcategory && `• ${work.subcategory}`}
+                        </p>
+                        <h3 className="font-serif text-xl font-normal text-[#fffef2] leading-snug line-clamp-1">
+                          {work.number}. {work.title}
+                        </h3>
+                        {work.titleBengali && (
+                          <p className="text-xs text-[#d4a373] font-serif line-clamp-1">
+                            {work.titleBengali}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Bottom Title Bar over Cover */}
-                    <div className="absolute bottom-3 left-3 right-3">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#d4a373]">
-                        {work.category} {work.subcategory && `• ${work.subcategory}`}
-                      </p>
-                      <h3 className="font-serif text-xl font-normal text-[#fffef2] leading-snug line-clamp-1">
-                        {work.number}. {work.title}
-                      </h3>
-                      {work.titleBengali && (
-                        <p className="text-xs text-[#d4a373] font-serif line-clamp-1">
-                          {work.titleBengali}
+                    {/* Body Content */}
+                    <div className="p-5 space-y-3">
+                      {work.blurbBengali && (
+                        <p className="text-xs text-[#2a2724] dark:text-[#f5f2e6] leading-relaxed line-clamp-3 font-serif bg-[#fbf9ee] dark:bg-[#25221e] p-2.5 rounded-xl border border-[#ebd9c5] dark:border-[#38332c]">
+                          {work.blurbBengali}
                         </p>
                       )}
+                      {work.blurbEnglish && (
+                        <p className="text-xs text-[#2a2724]/80 dark:text-[#f5f2e6]/80 leading-relaxed line-clamp-3 font-sans">
+                          {work.blurbEnglish}
+                        </p>
+                      )}
+
+                      {/* Tags */}
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {work.tags.slice(0, 3).map((tag, tIdx) => (
+                          <span key={tIdx} className="px-2 py-0.5 text-[10px] rounded-lg bg-[#f5f1e3] dark:bg-[#2a2724] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 border border-[#ebd9c5] dark:border-[#38332c]">
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Body Content */}
-                  <div className="p-5 space-y-3">
-                    {/* Blurb Bengali or English */}
-                    {work.blurbBengali && (
-                      <p className="text-xs text-[#2a2724] dark:text-[#f5f2e6] leading-relaxed line-clamp-3 font-serif bg-[#fbf9ee] dark:bg-[#25221e] p-2.5 rounded-xl border border-[#ebd9c5] dark:border-[#38332c]">
-                        {work.blurbBengali}
-                      </p>
-                    )}
-                    {work.blurbEnglish && (
-                      <p className="text-xs text-[#2a2724]/80 dark:text-[#f5f2e6]/80 leading-relaxed line-clamp-3 font-sans">
-                        {work.blurbEnglish}
-                      </p>
-                    )}
+                  {/* Card Footer */}
+                  <div className="p-4 pt-0 border-t border-[#ebd9c5]/40 dark:border-[#38332c]/40 flex items-center justify-between gap-2 text-xs text-[#d4a373] font-bold">
+                    <div className="flex items-center space-x-2">
+                      <Globe className="w-3.5 h-3.5" />
+                      <span className="text-[11px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60">{work.language}</span>
+                    </div>
 
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {work.tags.slice(0, 3).map((tag, tIdx) => (
-                        <span key={tIdx} className="px-2 py-0.5 text-[10px] rounded-lg bg-[#f5f1e3] dark:bg-[#2a2724] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 border border-[#ebd9c5] dark:border-[#38332c]">
-                          #{tag}
-                        </span>
-                      ))}
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onOpenSampleChapter) {
+                            const publishedBook: PublishedBook = {
+                              id: work.id,
+                              title: work.title,
+                              subtitle: work.titleBengali ? `${work.titleBengali} • ${work.subcategory || ''}` : work.subcategory,
+                              series: work.series,
+                              coverUrl: work.coverUrl,
+                              genre: work.category,
+                              releaseDate: '2024',
+                              publisher: 'Storizine Edition',
+                              blurb: work.blurbEnglish || work.blurbBengali || '',
+                              excerpt: work.excerpt || `Chapter 1: ${work.title}\n\n${work.blurbEnglish || work.blurbBengali || 'Excerpt sample coming soon.'}`,
+                              buyLinks: work.readOnPlatforms ? work.readOnPlatforms.map(p => ({ vendor: p.name, url: p.url })) : [
+                                { vendor: 'Wattpad', url: 'https://www.wattpad.com' },
+                                { vendor: 'Webnovel', url: 'https://www.webnovel.com' }
+                              ],
+                              praise: [{ quote: 'A featured Storizine release.', source: 'Storizine' }],
+                              rating: 4.9,
+                              pages: 250,
+                              formats: ['Ebook', 'Paperback'],
+                            };
+                            onOpenSampleChapter(publishedBook);
+                          } else {
+                            setSelectedWork(work);
+                          }
+                        }}
+                        className="px-2.5 py-1 rounded-xl bg-[#d4a373]/20 hover:bg-[#d4a373] text-[#d4a373] hover:text-[#181614] border border-[#d4a373]/30 text-[11px] font-bold flex items-center space-x-1 transition-colors"
+                        title="Read Sample Chapter"
+                      >
+                        <BookOpen className="w-3 h-3" />
+                        <span>Read Sample</span>
+                      </button>
+
+                      <div className="flex items-center space-x-1 text-[#d4a373] group-hover:translate-x-1 transition-transform">
+                        <span>Info</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </div>
                     </div>
                   </div>
+
                 </div>
-
-                {/* Card Footer */}
-                <div className="p-4 pt-0 border-t border-[#ebd9c5]/40 dark:border-[#38332c]/40 flex items-center justify-between gap-2 text-xs text-[#d4a373] font-bold">
-                  <div className="flex items-center space-x-2">
-                    <Globe className="w-3.5 h-3.5" />
-                    <span className="text-[11px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60">{work.language}</span>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (onOpenSampleChapter) {
-                          const publishedBook: PublishedBook = {
-                            id: work.id,
-                            title: work.title,
-                            subtitle: work.titleBengali ? `${work.titleBengali} • ${work.subcategory || ''}` : work.subcategory,
-                            series: work.series,
-                            coverUrl: work.coverUrl,
-                            genre: work.category,
-                            releaseDate: '2024',
-                            publisher: 'Storizine Edition',
-                            blurb: work.blurbEnglish || work.blurbBengali || '',
-                            excerpt: work.excerpt || `Chapter 1: ${work.title}\n\n${work.blurbEnglish || work.blurbBengali || 'Excerpt sample coming soon.'}`,
-                            buyLinks: work.readOnPlatforms ? work.readOnPlatforms.map(p => ({ vendor: p.name, url: p.url })) : [
-                              { vendor: 'Wattpad', url: 'https://www.wattpad.com' },
-                              { vendor: 'Webnovel', url: 'https://www.webnovel.com' }
-                            ],
-                            praise: [{ quote: 'A featured Storizine release.', source: 'Storizine' }],
-                            rating: 4.9,
-                            pages: 250,
-                            formats: ['Ebook', 'Paperback'],
-                          };
-                          onOpenSampleChapter(publishedBook);
-                        } else {
-                          setSelectedWork(work);
-                        }
-                      }}
-                      className="px-2.5 py-1 rounded-xl bg-[#d4a373]/20 hover:bg-[#d4a373] text-[#d4a373] hover:text-[#181614] border border-[#d4a373]/30 text-[11px] font-bold flex items-center space-x-1 transition-colors"
-                      title="Read Sample Chapter"
-                    >
-                      <BookOpen className="w-3 h-3" />
-                      <span>Read Sample</span>
-                    </button>
-
-                    <div className="flex items-center space-x-1 text-[#d4a373] group-hover:translate-x-1 transition-transform">
-                      <span>Info</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
 
-      {/* Work Detail Modal */}
+      {/* Work Details Overlay Modal */}
       {selectedWork && (
-        <div className="fixed inset-0 z-50 bg-[#181614]/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#fffef2] dark:bg-[#1f1d1a] border border-[#ebd9c5] dark:border-[#38332c] text-[#2a2724] dark:text-[#f5f2e6] w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 bg-[#181614]/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#fffef2] dark:bg-[#181614] border border-[#ebd9c5] dark:border-[#38332c] rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
             
-            {/* Header image banner */}
-            <div className="relative h-48 bg-[#181614] shrink-0">
-              <img
-                src={selectedWork.coverUrl}
-                alt={selectedWork.title}
-                className="w-full h-full object-cover opacity-80"
-                referrerPolicy="no-referrer"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1f1d1a] via-[#1f1d1a]/50 to-transparent" />
-              
-              <button
-                onClick={() => setSelectedWork(null)}
-                className="absolute top-4 right-4 p-2 rounded-full bg-[#181614]/80 text-[#fffef2] hover:bg-[#d4a373] hover:text-[#181614] transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+            <button
+              onClick={() => setSelectedWork(null)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724] dark:text-[#f5f2e6] hover:bg-[#ebd9c5] transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-              <div className="absolute bottom-4 left-6 right-6 space-y-1">
-                <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-[#d4a373] text-[#181614]">
-                  Work #{selectedWork.number} • {selectedWork.category}
-                </span>
-                <h2 className="text-2xl font-serif text-[#fffef2]">
-                  {selectedWork.title} {selectedWork.titleBengali && <span className="text-[#d4a373]">/ {selectedWork.titleBengali}</span>}
-                </h2>
-                {selectedWork.subcategory && (
-                  <p className="text-xs text-[#d4a373] font-handwriting">{selectedWork.subcategory}</p>
-                )}
+            <div className="flex flex-col sm:flex-row gap-6">
+              <div className="w-full sm:w-44 h-64 bg-[#181614] rounded-2xl overflow-hidden shrink-0 shadow-lg border border-[#ebd9c5]/60">
+                <img src={selectedWork.coverUrl} alt={selectedWork.title} className="w-full h-full object-cover" />
               </div>
-            </div>
 
-            {/* Scrollable Content */}
-            <div className="p-6 overflow-y-auto space-y-5">
-              
-              {selectedWork.blurbBengali && (
-                <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-[#d4a373] uppercase tracking-wider">সারসংক্ষেপ (Bengali Blurb)</h4>
-                  <p className="text-sm font-serif leading-relaxed bg-[#fbf9ee] dark:bg-[#25221e] p-4 rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] text-[#2a2724] dark:text-[#f5f2e6]">
-                    {selectedWork.blurbBengali}
-                  </p>
-                </div>
-              )}
+              <div className="space-y-3 flex-1">
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#d4a373]/20 text-[#b07843] dark:text-[#d4a373]">
+                  {selectedWork.category} {selectedWork.subcategory && `• ${selectedWork.subcategory}`}
+                </span>
 
-              {selectedWork.blurbEnglish && (
-                <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-[#d4a373] uppercase tracking-wider">English Synopsis</h4>
+                <h2 className="font-serif text-2xl font-bold text-[#2a2724] dark:text-[#f5f2e6]">
+                  {selectedWork.number}. {selectedWork.title}
+                </h2>
+
+                {selectedWork.blurbEnglish && (
                   <p className="text-xs text-[#2a2724]/80 dark:text-[#f5f2e6]/80 leading-relaxed font-sans">
                     {selectedWork.blurbEnglish}
                   </p>
-                </div>
-              )}
-
-              {selectedWork.excerpt && (
-                <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-[#d4a373] uppercase tracking-wider">Sample Excerpt</h4>
-                  <pre className="text-xs font-serif leading-relaxed whitespace-pre-wrap bg-[#f5f1e3] dark:bg-[#2a2724] p-4 rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] text-[#2a2724] dark:text-[#f5f2e6]">
-                    {selectedWork.excerpt}
-                  </pre>
-                </div>
-              )}
-
-              {selectedWork.chapterCount && (
-                <div className="p-3 bg-[#d4a373]/15 rounded-xl border border-[#d4a373]/30 flex items-center justify-between text-xs text-[#d4a373]">
-                  <span className="font-bold">Total Chapters Published:</span>
-                  <span className="font-serif text-base">{selectedWork.chapterCount} Chapters</span>
-                </div>
-              )}
-
-              {selectedWork.readOnPlatforms && selectedWork.readOnPlatforms.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-[#d4a373] uppercase tracking-wider">Read Online Platforms</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedWork.readOnPlatforms.map((p, pIdx) => (
-                      <a
-                        key={pIdx}
-                        href={p.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-4 py-2 rounded-xl bg-[#2a2724] hover:bg-[#d4a373] text-[#d4a373] hover:text-[#181614] text-xs font-bold transition-colors flex items-center space-x-1.5 border border-[#d4a373]/40"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Read on {p.name}</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Tags */}
-              <div className="space-y-1.5 pt-2 border-t border-[#ebd9c5] dark:border-[#38332c]">
-                <p className="text-[11px] font-bold text-[#2a2724]/60 dark:text-[#f5f2e6]/60">Tags & Categories:</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedWork.tags.map((t, idx) => (
-                    <span key={idx} className="px-2.5 py-1 text-xs rounded-xl bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724] dark:text-[#f5f2e6] border border-[#ebd9c5] dark:border-[#38332c]">
-                      #{t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 bg-[#fbf9ee] dark:bg-[#25221e] border-t border-[#ebd9c5] dark:border-[#38332c] flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span className="text-[#2a2724]/60 dark:text-[#f5f2e6]/60">Storizine • by {STORIZINE_AUTHOR.name}</span>
-              
-              <div className="flex items-center space-x-2">
-                {onOpenSampleChapter && (
-                  <button
-                    onClick={() => {
-                      const publishedBook: PublishedBook = {
-                        id: selectedWork.id,
-                        title: selectedWork.title,
-                        subtitle: selectedWork.titleBengali ? `${selectedWork.titleBengali} • ${selectedWork.subcategory || ''}` : selectedWork.subcategory,
-                        series: selectedWork.series,
-                        coverUrl: selectedWork.coverUrl,
-                        genre: selectedWork.category,
-                        releaseDate: '2024',
-                        publisher: 'Storizine Edition',
-                        blurb: selectedWork.blurbEnglish || selectedWork.blurbBengali || '',
-                        excerpt: selectedWork.excerpt || `Chapter 1: ${selectedWork.title}\n\n${selectedWork.blurbEnglish || selectedWork.blurbBengali || 'Excerpt sample coming soon.'}`,
-                        buyLinks: selectedWork.readOnPlatforms ? selectedWork.readOnPlatforms.map(p => ({ vendor: p.name, url: p.url })) : [
-                          { vendor: 'Wattpad', url: 'https://www.wattpad.com' },
-                          { vendor: 'Webnovel', url: 'https://www.webnovel.com' }
-                        ],
-                        praise: [{ quote: 'A featured Storizine release.', source: 'Storizine' }],
-                        rating: 4.9,
-                        pages: 250,
-                        formats: ['Ebook', 'Paperback'],
-                      };
-                      setSelectedWork(null);
-                      onOpenSampleChapter(publishedBook);
-                    }}
-                    className="px-4 py-2 rounded-xl bg-[#d4a373] text-[#181614] hover:bg-[#c39262] font-bold text-xs flex items-center space-x-1.5 shadow-xs transition-colors"
-                  >
-                    <BookOpen className="w-3.5 h-3.5" />
-                    <span>Read Sample Chapter</span>
-                  </button>
                 )}
-                <button
-                  onClick={() => setSelectedWork(null)}
-                  className="px-4 py-2 rounded-xl bg-[#2a2724] dark:bg-[#38332c] text-[#f5f2e6] font-bold"
-                >
-                  Close
-                </button>
+
+                {/* Available Reading Platforms */}
+                {selectedWork.readOnPlatforms && selectedWork.readOnPlatforms.length > 0 && (
+                  <div className="pt-3 border-t border-[#ebd9c5] dark:border-[#38332c]">
+                    <span className="text-xs font-bold text-[#2a2724] dark:text-[#f5f2e6] block mb-2">Read on Platforms:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedWork.readOnPlatforms.map((p, pIdx) => (
+                        <a
+                          key={pIdx}
+                          href={p.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-xl bg-[#2a2724] text-[#d4a373] text-xs font-bold flex items-center space-x-1.5 hover:bg-[#3d3834] transition-colors"
+                        >
+                          <span>{p.name}</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Published Book Modal */}
+      {editingPublished && (
+        <div className="fixed inset-0 z-50 bg-[#181614]/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <form onSubmit={handleSavePublishedBookSubmit} className="bg-[#fffef2] dark:bg-[#181614] border border-[#ebd9c5] dark:border-[#38332c] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative text-xs">
+            <button
+              type="button"
+              onClick={() => setEditingPublished(null)}
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724] dark:text-[#f5f2e6]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <h3 className="font-serif text-xl font-bold text-[#2a2724] dark:text-[#f5f2e6] border-b border-[#ebd9c5] dark:border-[#38332c] pb-2">
+              Edit Published Work
+            </h3>
+
+            <div>
+              <label className="block font-bold mb-1">Title</label>
+              <input
+                type="text"
+                value={editingPublished.title}
+                onChange={(e) => setEditingPublished({ ...editingPublished, title: e.target.value })}
+                className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-bold mb-1">Genre</label>
+                <input
+                  type="text"
+                  value={editingPublished.genre}
+                  onChange={(e) => setEditingPublished({ ...editingPublished, genre: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Publisher</label>
+                <input
+                  type="text"
+                  value={editingPublished.publisher}
+                  onChange={(e) => setEditingPublished({ ...editingPublished, publisher: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                />
               </div>
             </div>
 
-          </div>
+            <div>
+              <label className="block font-bold mb-1">Cover Image URL</label>
+              <input
+                type="text"
+                value={editingPublished.coverUrl}
+                onChange={(e) => setEditingPublished({ ...editingPublished, coverUrl: e.target.value })}
+                className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold mb-1">Blurb / Description</label>
+              <textarea
+                rows={3}
+                value={editingPublished.blurb}
+                onChange={(e) => setEditingPublished({ ...editingPublished, blurb: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setEditingPublished(null)}
+                className="px-4 py-2 rounded-xl bg-[#f5f1e3] dark:bg-[#25221e] font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-[#d4a373] text-[#fffef2] font-bold flex items-center space-x-1"
+              >
+                <Save className="w-4 h-4" />
+                <span>Save Work</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Edit Upcoming Release Modal */}
+      {editingUpcoming && (
+        <div className="fixed inset-0 z-50 bg-[#181614]/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <form onSubmit={handleSaveUpcomingBookSubmit} className="bg-[#fffef2] dark:bg-[#181614] border border-[#ebd9c5] dark:border-[#38332c] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative text-xs">
+            <button
+              type="button"
+              onClick={() => setEditingUpcoming(null)}
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724] dark:text-[#f5f2e6]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <h3 className="font-serif text-xl font-bold text-[#2a2724] dark:text-[#f5f2e6] border-b border-[#ebd9c5] dark:border-[#38332c] pb-2">
+              Edit Upcoming Release &amp; WIP
+            </h3>
+
+            <div>
+              <label className="block font-bold mb-1">Title</label>
+              <input
+                type="text"
+                value={editingUpcoming.title}
+                onChange={(e) => setEditingUpcoming({ ...editingUpcoming, title: e.target.value })}
+                className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-bold mb-1">Writing Stage</label>
+                <input
+                  type="text"
+                  value={editingUpcoming.writingStage}
+                  onChange={(e) => setEditingUpcoming({ ...editingUpcoming, writingStage: e.target.value as any })}
+                  className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Progress (%)</label>
+                <input
+                  type="number"
+                  value={editingUpcoming.progressPercentage}
+                  onChange={(e) => setEditingUpcoming({ ...editingUpcoming, progressPercentage: Number(e.target.value) })}
+                  className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#221f1c] outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setEditingUpcoming(null)}
+                className="px-4 py-2 rounded-xl bg-[#f5f1e3] dark:bg-[#25221e] font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-[#d4a373] text-[#fffef2] font-bold flex items-center space-x-1"
+              >
+                <Save className="w-4 h-4" />
+                <span>Save WIP</span>
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

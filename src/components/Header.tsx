@@ -211,12 +211,12 @@ export const Header: React.FC<HeaderProps> = ({
                     </Link>
 
                     <Link
-                      to="/account/lists"
+                      to="/storizine"
                       onClick={() => setIsUserMenuOpen(false)}
                       className="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-[#2a2724] dark:text-[#f5f2e6] hover:bg-[#f5f1e3] dark:hover:bg-[#25221e] transition-colors"
                     >
                       <BookOpen className="w-4 h-4 text-[#d4a373]" />
-                      <span>Published &amp; Upcoming</span>
+                      <span>Manage Writing &amp; Catalog</span>
                     </Link>
 
                     <Link
