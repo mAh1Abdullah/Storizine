@@ -60,12 +60,17 @@ The app is crafted with a warm, bookish design language, featuring parchment ton
 
 ### 3. BookForest Reading Tracker & Collection Shelves
 - **Goodreads & StoryGraph Style Shelves:** Categorize titles under `Read`, `Currently Reading`, `Want to Read`, and `Did Not Finish (DNF)`.
+- **Book Lending Tracker (BookBuddy+ Feature):** Track loaned books with borrower name, contact information (email/phone), loan date, and due date. Features a dedicated "Lent Out" filter tab and one-click book return flow directly on book cards.
+- **Mobile Barcode Scanning (BookBuddy+ Feature):** Client-side ISBN camera barcode scanner powered by `html5-qrcode`. Point your camera at any physical book barcode to instantly resolve metadata (title, author, cover, page count, and edition details) from Open Library. Includes quick test simulation for non-camera environments.
 - **Physical & Virtual Collection Tracker:** Track owned editions (`Hardcover`, `Paperback`, `Special Edition`, `Ebook`, `Audiobook`), shelf/room locations, and purchase costs.
 - **Progress Tracking:** Live page counts, percentage sliders, date started, date finished, and read-count trackers (for re-readers).
-- **Personal Literary Journal:** 5-star ratings, comprehensive reviews, favorite quotes collection, and custom tags.
+- **Guided Journal Prompts & Aesthetic Planner View (Goodnotes Feature):** Expand reviews with structured dropdowns for *Plot Twist Rating*, *Pacing & Atmospheric Tone*, *Would I Re-read?*, *Emotional Impact*, and *Worldbuilding Notes*. Includes an **"Export Aesthetic Journal Card"** generator that renders Goodnotes-style digital planner sheets and exports high-DPI PNG graphics or printable PDFs via `html-to-image`.
 
 ### 4. Reader Graph Analytics & Printable PDF Reports
 - **Executive Summary:** Live statistical overview tracking total library count, finished books, total pages read, average star rating, and goal completion rates.
+- **"Ahead / Behind" Schedule Metric (Goodreads Feature):** Real-time reading pace calculation based on the day of the year:
+  $$\text{Expected} = \text{Annual Goal} \times \left(\frac{\text{Current Day of Year}}{365}\right)$$
+  Displays dynamic color-coded pace alerts (e.g. *"🎉 You are 2 books ahead of schedule!"* or *"⏳ You are 1 book behind schedule"*) on the reading challenge card.
 - **Visual Analytics:** Interactive Recharts visualizations:
   - Reading Status Distribution (Donut Chart)
   - Owned Edition Formats Breakdown (Bar Chart)
@@ -82,7 +87,7 @@ The app is crafted with a warm, bookish design language, featuring parchment ton
 
 ### 6. External Book & Social Integrations
 - **Project Gutenberg Classics:** Discover and import public domain masterworks directly into your BookForest shelves.
-- **Open Library Search:** Search millions of titles by title/author with one-click catalog import.
+- **Live Community Rating Lookups (Goodreads Feature):** Live public consensus ratings and reader review counts queried from Open Library and Google Books API directly inside the search modal (`OpenLibraryModal.tsx`), allowing users to verify community acclaim before saving or purchasing.
 - **The StoryGraph Mood Explorer:** Explore reading stats categorized by emotional moods, pace, and length distributions.
 - **Fable Social Reading Lounge & Book Clubs:** Join community discussions, read along with featured book clubs, and share notes with fellow readers.
 - **Goodreads Choice Awards & Quotes:** Curated showcases of award-winning literature and inspiring literary quotes.
@@ -282,17 +287,16 @@ The server exposes backend routes via Express:
   }
   ```
 
-### 3. AI Book Recommendations
-- **Endpoint:** `POST /api/ai/recommend-books`
-- **Description:** Suggests books to add to the user's *Want to Read* list based on their reading history and taste.
+### 4. Language Assistant & Inline Term Explainer
+- **Endpoint:** `POST /api/ai/explain-term`
+- **Description:** Returns contextual definitions, etymology, and historical literary background for highlighted words or passages using Gemini 2.5 Flash.
 - **Request Body:**
   ```json
   {
-    "readHistory": [
-      { "title": "Dune", "genre": "Sci-Fi", "userRating": 5 },
-      { "title": "Project Hail Mary", "genre": "Sci-Fi", "userRating": 5 }
-    ],
-    "preferredGenres": ["Science Fiction", "Speculative Fiction", "Adventure"]
+    "term": "palimpsest",
+    "contextSentence": "The ancient city was a palimpsest of forgotten empires.",
+    "bookTitle": "The Chronicler of Veridia",
+    "author": "Evelyn Vance"
   }
   ```
 - **Response Body:**
@@ -300,19 +304,97 @@ The server exposes backend routes via Express:
   {
     "success": true,
     "data": {
-      "recommendations": [
-        {
-          "title": "Children of Time",
-          "author": "Adrian Tchaikovsky",
-          "genre": "Science Fiction",
-          "blurb": "An epic journey of evolution and humanity's survival.",
-          "whyRecommended": "Matches your appreciation for vast scale and thoughtful speculative biology.",
-          "vibeTag": "Mind-bending Worldbuilding"
-        }
-      ]
+      "term": "palimpsest",
+      "partOfSpeech": "noun",
+      "definition": "A manuscript or piece of writing material on which later writing has been superimposed on effaced earlier writing.",
+      "historicalContext": "Common in medieval monastic libraries where parchment was scarce and reused.",
+      "etymology": "From Ancient Greek παλίμψηστος (palímpsēstos), from palin ('again') + psēstos ('scraped').",
+      "literarySignificance": "Evokes themes of hidden memory, multi-layered history, and the persistence of the past."
     }
   }
   ```
+
+### 5. File Bucket & Upload API (.epub / .pdf)
+- **Endpoint:** `POST /api/upload`
+- **Description:** Stores uploaded `.epub` and `.pdf` files onto the persistent backend storage.
+- **Request Body:**
+  ```json
+  {
+    "filename": "my-novel.epub",
+    "fileData": "data:application/epub+zip;base64,...",
+    "fileType": "epub"
+  }
+  ```
+- **Endpoint:** `GET /api/files/:filename`
+- **Description:** Streams uploaded book files with byte-range requests and correct MIME headers (`application/epub+zip` or `application/pdf`).
+
+### 6. Annotations & Highlighting Table API
+- **Endpoint:** `GET /api/annotations?bookId=:id`
+- **Endpoint:** `POST /api/annotations`
+- **Schema:**
+  ```sql
+  CREATE TABLE annotations (
+    id UUID PRIMARY KEY,
+    book_id UUID REFERENCES books(id),
+    user_id UUID REFERENCES users(id),
+    cfi_range TEXT NOT NULL,
+    color VARCHAR(20) DEFAULT 'yellow',
+    note TEXT,
+    highlighted_text TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  );
+  ```
+
+### 7. Real-Time Reading Position Sync
+- **Endpoint:** `GET /api/reading-progress/:bookId`
+- **Endpoint:** `POST /api/reading-progress`
+- **Description:** Debounced sync saving the exact EPUB Canonical Fragment Identifier (`cfi`) and completion percentage, allowing seamless cross-device resumption via `initialLocation={savedCfi}`.
+
+---
+
+## 🖥️ Readest & Foliate Core Reader Engine
+
+Storizine embeds the **Foliate Core Reader** inside an iframe-isolated container:
+- **Iframe CSS Isolation:** Completely insulates the reading canvas from host stylesheet interference, providing clean reflowable pagination.
+- **Multi-Format Binding:** Reads local and remote `.epub`, `.pdf`, `.txt`, `.markdown`, and `.mobi` files.
+- **Display Toolbar:**
+  - **Font Size Scaler:** 12pt to 72pt range.
+  - **Line Height:** 1.0x to 2.8x fine slider.
+  - **Page Margin Padding:** 12px to 96px for full-bleed or narrow columns.
+  - **Themes:** *Parchment (Day)*, *Sepia (Warm Book Paper)*, *Night (Slate)*, *OLED Night (True #000000 Black)*, and *Warm Amber (Blue-Light Shift)*.
+  - **Typefaces:** *Merriweather*, *Georgia*, *Inter*, *OpenDyslexic*, *Cinzel*, and *Fira Code*.
+
+### 🔍 Readest WordLens & Gemini AI Contextual Selection
+- **Offline WordLens:** Highlight any single word to pull instant definitions, phonetic pronunciations, grammar tags, and Bengali translations directly from `data/wordlens/*.json` without network access.
+- **Gemini Literary Subtext & Themes (`POST /api/ai/explain`):** Highlight any sentence or paragraph to trigger Gemini Flash, unpacking literary subtext, identifying motifs, and translating between English and Bengali.
+- **Native Browser Text-to-Speech (TTS):** Audio narration using `window.speechSynthesis`.
+
+---
+
+## 📦 Tauri v2 Desktop & Mobile Packaging
+
+Adopted the Readest Tauri v2 configuration (`src-tauri/tauri.conf.json` & `src-tauri/Cargo.toml`):
+- **Local File Associations:** Registers `.epub`, `.pdf`, `.mobi`, `.txt`, and `.markdown` as system-level document types.
+- **Cross-Platform Native Installers:**
+  - macOS: `.dmg`
+  - Windows: `.exe` / `.msi`
+  - Linux: `.deb` / `.AppImage`
+  - Android: `.apk`
+- **Build Command:**
+  ```bash
+  npm run build:client
+  cargo tauri build
+  ```
+
+---
+
+## 📱 Progressive Web App (PWA) & Offline Reading
+
+Storizine is a fully compliant Progressive Web App:
+- **Offline Reading Engine:** Parsed books, excerpts, notes, and CFI positions are cached in the browser's **IndexedDB** (`idb`).
+- **Service Worker Caching:** Handled automatically by `vite-plugin-pwa` with CacheFirst policies for fonts, scripts, and static assets.
+- **Installability:** One-click install prompt on Chrome, Edge, and Android, plus step-by-step "Add to Home Screen" instructions for iOS Safari.
+- **Offline Mode Indicator:** Non-intrusive status banner alerts the reader when navigating without network connectivity.
 
 ---
 

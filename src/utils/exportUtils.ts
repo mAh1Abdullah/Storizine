@@ -39,6 +39,15 @@ export function exportBookForestCSV(entries: BookForestEntry[]) {
     'Review Comments',
     'Quotes Saved',
     'Tags',
+    'Loaned Out',
+    'Borrower Name',
+    'Borrower Contact',
+    'Loan Date',
+    'Due Date',
+    'Plot Twist Rating',
+    'Pacing & Tone',
+    'Would Re-read',
+    'Emotional Impact',
   ];
 
   const escapeCSV = (val: any): string => {
@@ -67,6 +76,15 @@ export function exportBookForestCSV(entries: BookForestEntry[]) {
     escapeCSV(e.reviewComments),
     escapeCSV(e.quotesSaved),
     escapeCSV(e.tags),
+    escapeCSV(e.loan?.isLoanedOut ? 'Yes' : 'No'),
+    escapeCSV(e.loan?.borrowerName ?? ''),
+    escapeCSV(e.loan?.borrowerContact ?? ''),
+    escapeCSV(e.loan?.loanDate ?? ''),
+    escapeCSV(e.loan?.dueDate ?? ''),
+    escapeCSV(e.journalPrompts?.plotTwistRating ?? ''),
+    escapeCSV(e.journalPrompts?.pacingAndTone ?? ''),
+    escapeCSV(e.journalPrompts?.wouldReRead ?? ''),
+    escapeCSV(e.journalPrompts?.emotionalImpact ?? ''),
   ]);
 
   const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');

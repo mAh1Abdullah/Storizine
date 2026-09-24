@@ -19,6 +19,7 @@ import {
   FileText,
   Layers,
 } from 'lucide-react';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface HeaderProps {
   searchQuery: string;
@@ -274,6 +275,9 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Writer Access</span>
             </button>
           )}
+
+          {/* PWA Install Button */}
+          <PWAInstallButton />
 
           <button
             id="btn-toggle-darkmode"

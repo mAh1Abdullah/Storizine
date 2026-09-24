@@ -1,0 +1,182 @@
+{
+  "palimpsest": {
+    "word": "palimpsest",
+    "partOfSpeech": "noun",
+    "phonetic": "/ˈpæl.ɪmp.sest/",
+    "definition": "A manuscript or piece of writing material on which later writing has been superimposed on effaced earlier writing; something reused or altered but still bearing visible traces of its earlier form.",
+    "grammarTags": ["countable noun", "literary motif"],
+    "example": "The ancient cathedral was an architectural palimpsest of Romanesque and Gothic stone.",
+    "bengaliTranslation": "পুনর্লিখিত প্রাচীন পাণ্ডুলিপি",
+    "synonyms": ["manuscript", "parchment", "overwriting", "layer"]
+  },
+  "chiaroscuro": {
+    "word": "chiaroscuro",
+    "partOfSpeech": "noun",
+    "phonetic": "/kiˌɑː.rəˈskjʊə.roʊ/",
+    "definition": "The treatment of light and shade in drawing and painting, or an effect of contrasted light and shadow in literature and cinema.",
+    "grammarTags": ["uncountable noun", "aesthetic terminology"],
+    "example": "The candlelight created an eerie chiaroscuro across the scholar's study.",
+    "bengaliTranslation": "আলো-ছায়ার খেলা",
+    "synonyms": ["light-and-shade", "contrast", "shading"]
+  },
+  "ephemeral": {
+    "word": "ephemeral",
+    "partOfSpeech": "adjective",
+    "phonetic": "/ɪˈfem.ər.əl/",
+    "definition": "Lasting for a very short time; transitory, fleeting.",
+    "grammarTags": ["adjective", "formal / literary"],
+    "example": "The ephemeral morning mist vanished as soon as the sun crested the mountains.",
+    "bengaliTranslation": "ক্ষণস্থায়ী / নশ্বর",
+    "synonyms": ["transient", "fleeting", "short-lived", "momentary"]
+  },
+  "ineffable": {
+    "word": "ineffable",
+    "partOfSpeech": "adjective",
+    "phonetic": "/ɪnˈef.ə.bəl/",
+    "definition": "Too great, beautiful, or sacred to be expressed or described in words.",
+    "grammarTags": ["adjective", "elevated register"],
+    "example": "Standing upon the precipice, she was struck by the ineffable wonder of the cosmos.",
+    "bengaliTranslation": "অনির্বচনীয় / বর্ণনাতীত",
+    "synonyms": ["indescribable", "unspeakable", "unutterable", "transcendent"]
+  },
+  "solipsism": {
+    "word": "solipsism",
+    "partOfSpeech": "noun",
+    "phonetic": "/ˈsɒl.ɪp.sɪ.zəm/",
+    "definition": "The philosophical idea that only one's own mind is sure to exist; extreme preoccupation with and indulgence of one's own feelings and desires.",
+    "grammarTags": ["philosophical noun", "uncountable"],
+    "example": "In his hermetic isolation, his thoughts slipped toward solipsism.",
+    "bengaliTranslation": "আমিত্ববাদ / আত্মকেন্দ্রিকতা",
+    "synonyms": ["egocentrism", "subjectivism", "introspection"]
+  },
+  "petrichor": {
+    "word": "petrichor",
+    "partOfSpeech": "noun",
+    "phonetic": "/ˈpet.rɪ.kɔːr/",
+    "definition": "A pleasant, distinctive smell that frequently accompanies the first rain after a long period of warm, dry weather.",
+    "grammarTags": ["uncountable noun", "sensory imagery"],
+    "example": "The dusty courtyards filled with the soothing petrichor of monsoon rains.",
+    "bengaliTranslation": "বৃষ্টির পর মাটির সুগন্ধ",
+    "synonyms": ["rain scent", "earth smell"]
+  },
+  "verisimilitude": {
+    "word": "verisimilitude",
+    "partOfSpeech": "noun",
+    "phonetic": "/ˌver.ɪ.sɪˈmɪl.ɪ.tʃuːd/",
+    "definition": "The appearance of being true or real; the quality in fiction that makes characters and worlds feel authentic.",
+    "grammarTags": ["literary criticism", "uncountable noun"],
+    "example": "The author used historical dialect to grant the dialogue undeniable verisimilitude.",
+    "bengaliTranslation": "বাস্তবতার অনুভূতি / সত্যসাদৃশ্য",
+    "synonyms": ["authenticity", "plausibility", "credibility", "realism"]
+  },
+  "eldritch": {
+    "word": "eldritch",
+    "partOfSpeech": "adjective",
+    "phonetic": "/ˈel.drɪtʃ/",
+    "definition": "Weird and sinister or ghostly; unearthly and unnerving.",
+    "grammarTags": ["archaic / Gothic genre", "adjective"],
+    "example": "An eldritch shriek echoed through the forgotten catacombs.",
+    "bengaliTranslation": "ভৌতিক / অপার্থিব ভয়ঙ্কর",
+    "synonyms": ["unearthly", "eerie", "macabre", "spectral"]
+  },
+  "zeitgeist": {
+    "word": "zeitgeist",
+    "partOfSpeech": "noun",
+    "phonetic": "/ˈtsaɪt.ɡaɪst/",
+    "definition": "The defining spirit, mood, or beliefs of a particular period of history as shown by the ideas and attitudes of the time.",
+    "grammarTags": ["noun singular", "cultural theory"],
+    "example": "The novel captures the apocalyptic zeitgeist of the early twenty-first century.",
+    "bengaliTranslation": "যুগচেতনা / যুগের ভাবধারা",
+    "synonyms": ["spirit of the age", "cultural climate", "ethos"]
+  },
+  "susurrus": {
+    "word": "susurrus",
+    "partOfSpeech": "noun",
+    "phonetic": "/sʊˈsʌr.əs/",
+    "definition": "Whispering, murmuring, or rustling sound.",
+    "grammarTags": ["poetic noun", "sound device"],
+    "example": "The gentle susurrus of willow leaves in the twilight breeze lulled her to sleep.",
+    "bengaliTranslation": "মৃদু মর্মর ধ্বনি",
+    "synonyms": ["whisper", "murmur", "rustle", "sigh"]
+  },
+  "serendipity": {
+    "word": "serendipity",
+    "partOfSpeech": "noun",
+    "phonetic": "/ˌser.ənˈdɪp.ə.ti/",
+    "definition": "The occurrence and development of events by chance in a happy or beneficial way.",
+    "grammarTags": ["uncountable noun"],
+    "example": "Finding the rare edition in an alley bookstore was pure serendipity.",
+    "bengaliTranslation": "সুখের দৈবযোগ / অপ্রত্যাশিত প্রাপ্তি",
+    "synonyms": ["chance", "happy accident", "fortune", "providence"]
+  },
+  "labyrinthine": {
+    "word": "labyrinthine",
+    "partOfSpeech": "adjective",
+    "phonetic": "/ˌlæb.əˈrɪn.θaɪn/",
+    "definition": "Used to describe something that is intricate, complicated, and like a maze in layout or complexity.",
+    "grammarTags": ["descriptive adjective"],
+    "example": "They navigated the labyrinthine archives in search of the sealed parchment.",
+    "bengaliTranslation": "গোলকধাঁধাময় / জটিল",
+    "synonyms": ["maze-like", "convoluted", "intricate", "perplexing"]
+  },
+  "melancholy": {
+    "word": "melancholy",
+    "partOfSpeech": "noun",
+    "phonetic": "/ˈmel.ən.kɒl.i/",
+    "definition": "A feeling of pensive sadness, typically with no obvious cause; thoughtful gloom.",
+    "grammarTags": ["uncountable noun", "atmospheric tone"],
+    "example": "A soft melancholy permeated the autumn gardens.",
+    "bengaliTranslation": "বিষাদ / মনমরা ভাব",
+    "synonyms": ["sorrow", "gloom", "pensive sadness", "despondency"]
+  },
+  "sonorous": {
+    "word": "sonorous",
+    "partOfSpeech": "adjective",
+    "phonetic": "/ˈsɒn.ər.əs/",
+    "definition": "Capable of producing a deep, rich, ringing sound; imposing or grand in style.",
+    "grammarTags": ["adjective", "auditory imagery"],
+    "example": "The bard's sonorous voice commanded the attention of the entire great hall.",
+    "bengaliTranslation": "গম্ভীর ও সুমধুর ধ্বনিযুক্ত",
+    "synonyms": ["resonant", "rich", "booming", "full-toned"]
+  },
+  "numinous": {
+    "word": "numinous",
+    "partOfSpeech": "adjective",
+    "phonetic": "/ˈnjuː.mɪ.nəs/",
+    "definition": "Having a strong religious, spiritual, or awe-inspiring quality; indicating or suggesting the presence of a divinity.",
+    "grammarTags": ["philosophical adjective"],
+    "example": "The ancient mountain shrine had an unmistakably numinous presence.",
+    "bengaliTranslation": "ঐশ্বরিক / পবিত্র ভাবোদ্দীপক",
+    "synonyms": ["spiritual", "mystical", "sacred", "sublime"]
+  },
+  "quixotic": {
+    "word": "quixotic",
+    "partOfSpeech": "adjective",
+    "phonetic": "/kwɪkˈsɒt.ɪk/",
+    "definition": "Exceedingly idealistic; unrealistic and impractical.",
+    "grammarTags": ["literary adjective", "allusive"],
+    "example": "He embarked on a quixotic quest to catalog every forgotten spoken dialect.",
+    "bengaliTranslation": "অবাস্তব কল্পনাপ্রবণ / খামখেয়ালী",
+    "synonyms": ["idealistic", "visionary", "romantic", "unrealistic"]
+  },
+  "alacrity": {
+    "word": "alacrity",
+    "partOfSpeech": "noun",
+    "phonetic": "/əˈlæk.rə.ti/",
+    "definition": "Brisk and cheerful readiness or eagerness.",
+    "grammarTags": ["formal noun", "uncountable"],
+    "example": "She accepted the librarian's invitation with genuine alacrity.",
+    "bengaliTranslation": "ব্যগ্রতা / সানন্দ তৎপরতা",
+    "synonyms": ["eagerness", "willingness", "readiness", "briskness"]
+  },
+  "panoply": {
+    "word": "panoply",
+    "partOfSpeech": "noun",
+    "phonetic": "/ˈpæn.ə.pli/",
+    "definition": "An extensive or impressive collection or display of things; a complete suit of armor.",
+    "grammarTags": ["noun singular", "elevated diction"],
+    "example": "The study was decorated with a panoply of astrolabes and star maps.",
+    "bengaliTranslation": "সমগ্র সম্ভার / বর্ণাঢ্য সমাহার",
+    "synonyms": ["array", "display", "collection", "spectacle"]
+  }
+}

@@ -14,6 +14,8 @@ import { FableLoungeModal } from './components/FableLoungeModal';
 import { OpenLibraryModal } from './components/OpenLibraryModal';
 import { StoryGraphModal } from './components/StoryGraphModal';
 import { LoginModal } from './components/LoginModal';
+import { OfflineIndicator } from './components/OfflineIndicator';
+import { api } from './utils/api';
 import { Lock } from 'lucide-react';
 
 import {
@@ -51,7 +53,7 @@ export function App() {
 
   // Modal States
   const [isSampleModalOpen, setIsSampleModalOpen] = useState(false);
-  const [activeSampleBook, setActiveSampleBook] = useState<PublishedBook | null>(null);
+  const [activeSampleBook, setActiveSampleBook] = useState<PublishedBook | BookForestEntry | any | null>(null);
 
   const [isAddPortfolioModalOpen, setIsAddPortfolioModalOpen] = useState(false);
 
@@ -64,6 +66,18 @@ export function App() {
   const [isOpenLibraryModalOpen, setIsOpenLibraryModalOpen] = useState(false);
   const [isStoryGraphModalOpen, setIsStoryGraphModalOpen] = useState(false);
 
+  // Sync with Backend Database and IndexedDB
+  useEffect(() => {
+    api.getBooks().then((books) => {
+      if (books && books.length > 0) {
+        setBookForestEntries(books);
+      } else {
+        // Seed initial entries to backend & offline store
+        INITIAL_BOOK_FOREST.forEach((b) => api.saveBook(b));
+      }
+    });
+  }, []);
+
   // Dark Mode side effect
   useEffect(() => {
     if (darkMode) {
@@ -74,7 +88,7 @@ export function App() {
   }, [darkMode]);
 
   // Handlers
-  const handleOpenSampleChapter = (book: PublishedBook) => {
+  const handleOpenSampleChapter = (book: PublishedBook | BookForestEntry | any) => {
     setActiveSampleBook(book);
     setIsSampleModalOpen(true);
   };
@@ -88,6 +102,7 @@ export function App() {
   };
 
   const handleSaveBookForestEntry = (entry: BookForestEntry) => {
+    api.saveBook(entry);
     const existingIndex = bookForestEntries.findIndex((b) => b.id === entry.id);
     if (existingIndex >= 0) {
       const updated = [...bookForestEntries];
@@ -100,6 +115,7 @@ export function App() {
 
   const handleDeleteBookForestEntry = (id: string) => {
     setBookForestEntries(bookForestEntries.filter((b) => b.id !== id));
+    fetch(`/api/books/${id}`, { method: 'DELETE' }).catch(() => {});
   };
 
   const handleEditBookForestEntry = (entry: BookForestEntry) => {
@@ -211,6 +227,7 @@ export function App() {
                   onOpenFableLounge={() => setIsFableLoungeOpen(true)}
                   onOpenOpenLibraryModal={() => setIsOpenLibraryModalOpen(true)}
                   onOpenStoryGraphModal={() => setIsStoryGraphModalOpen(true)}
+                  onOpenReader={handleOpenSampleChapter}
                   searchQuery={searchQuery}
                   isLoggedIn={isLoggedIn}
                   onOpenLoginModal={() => setIsLoginModalOpen(true)}
@@ -301,11 +318,16 @@ export function App() {
       />
 
       {/* Sample Chapter Reader Overlay */}
+      {/* Web Reader Engine (EPUB / PDF) */}
       <SampleChapterModal
         isOpen={isSampleModalOpen}
         onClose={() => setIsSampleModalOpen(false)}
         book={activeSampleBook}
+        onUpdateBook={handleSaveBookForestEntry}
       />
+
+      {/* Offline PWA Indicator */}
+      <OfflineIndicator />
 
       {/* Add Author Book Modal */}
       <AddPublishedBookModal

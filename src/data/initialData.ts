@@ -183,6 +183,21 @@ export const INITIAL_BOOK_FOREST: BookForestEntry[] = [
     editionDetails: '50th Anniversary Folio Deluxe Edition with Cloth Cover and Map Inset',
     purchasePrice: 65,
     readCount: 3,
+    loan: {
+      isLoanedOut: true,
+      borrowerName: 'Sarah Jenkins',
+      borrowerContact: 'sarah.j@bookclub.org',
+      loanDate: '2026-08-15',
+      dueDate: '2026-10-15',
+    },
+    journalPrompts: {
+      plotTwistRating: 'Unpredictable Masterpiece',
+      favoriteQuote: 'Fear is the mind-killer. Fear is the little-death that brings total obliteration.',
+      worldbuildingNotes: 'The spice ecology, sand worms, and Fremen stillsuits create one of the most cohesive sci-fi settings.',
+      pacingAndTone: 'Slow Burn & Atmospheric',
+      wouldReRead: 'Yes, absolutely!',
+      emotionalImpact: 'Thought-provoking 🧠',
+    },
   },
   {
     id: 'bf-2',
@@ -206,6 +221,14 @@ export const INITIAL_BOOK_FOREST: BookForestEntry[] = [
     editionDetails: 'First Edition Hardcover + Audible Premium Edition',
     purchasePrice: 28,
     readCount: 2,
+    journalPrompts: {
+      plotTwistRating: 'Mind-Blowing 🤯',
+      favoriteQuote: 'Fist my bump! - Rocky',
+      worldbuildingNotes: 'Astrophage physics and Eridian atmosphere worked out meticulously.',
+      pacingAndTone: 'Fast-Paced Page-Turner',
+      wouldReRead: 'Yes, absolutely!',
+      emotionalImpact: 'Heartwarming ❤️',
+    },
   },
   {
     id: 'bf-3',
@@ -251,6 +274,21 @@ export const INITIAL_BOOK_FOREST: BookForestEntry[] = [
     editionDetails: 'Trade Paperback Edition',
     purchasePrice: 16,
     readCount: 1,
+    loan: {
+      isLoanedOut: true,
+      borrowerName: 'Marcus Vance',
+      borrowerContact: 'marcus.v@readingcircle.com',
+      loanDate: '2026-09-01',
+      dueDate: '2026-09-28',
+    },
+    journalPrompts: {
+      plotTwistRating: 'Mind-Blowing 🤯',
+      favoriteQuote: 'To allow yourself to play with another person is no small risk.',
+      worldbuildingNotes: 'Captures the raw passion of indie game development and late 90s nostalgia.',
+      pacingAndTone: 'Cozy & Character-Driven',
+      wouldReRead: 'Yes, absolutely!',
+      emotionalImpact: 'Tears were shed 🥺',
+    },
   },
   {
     id: 'bf-5',

@@ -260,9 +260,45 @@ export const ReaderGraphSection: React.FC<ReaderGraphSectionProps> = ({
               </p>
             </div>
 
-            <div className="flex items-center space-x-2 bg-[#f5f1e3] dark:bg-[#25221e] px-3.5 py-1.5 rounded-full border border-[#ebd9c5] dark:border-[#38332c] text-xs font-bold text-[#b07843] shrink-0">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{readingGoal.challenges?.filter(c => c.completed).length || 0} / {readingGoal.challenges?.length || 0} Challenges Achieved</span>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Goodreads Ahead / Behind Alert Badge */}
+              {(() => {
+                const now = new Date();
+                const startOfYear = new Date(now.getFullYear(), 0, 0);
+                const diffTime = (now.getTime() - startOfYear.getTime()) + ((startOfYear.getTimezoneOffset() - now.getTimezoneOffset()) * 60 * 1000);
+                const dayOfYear = Math.max(1, Math.min(365, Math.floor(diffTime / (1000 * 60 * 60 * 24))));
+                const annualGoal = readingGoal.targetBooks || 25;
+                const expectedBooks = annualGoal * (dayOfYear / 365);
+                const scheduleDiff = Math.round(statusCounts.read - expectedBooks);
+
+                if (scheduleDiff > 0) {
+                  return (
+                    <div className="px-3.5 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-800 dark:text-emerald-300 flex items-center space-x-1.5 text-xs font-bold">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>{scheduleDiff === 1 ? '1 book' : `${scheduleDiff} books`} ahead of schedule!</span>
+                    </div>
+                  );
+                } else if (scheduleDiff < 0) {
+                  return (
+                    <div className="px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-300 flex items-center space-x-1.5 text-xs font-bold">
+                      <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                      <span>{Math.abs(scheduleDiff) === 1 ? '1 book' : `${Math.abs(scheduleDiff)} books`} behind schedule</span>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div className="px-3.5 py-1.5 rounded-full bg-sky-500/15 border border-sky-500/40 text-sky-800 dark:text-sky-300 flex items-center space-x-1.5 text-xs font-bold">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                      <span>Right on track!</span>
+                    </div>
+                  );
+                }
+              })()}
+
+              <div className="flex items-center space-x-2 bg-[#f5f1e3] dark:bg-[#25221e] px-3.5 py-1.5 rounded-full border border-[#ebd9c5] dark:border-[#38332c] text-xs font-bold text-[#b07843] shrink-0">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{readingGoal.challenges?.filter(c => c.completed).length || 0} / {readingGoal.challenges?.length || 0} Challenges Achieved</span>
+              </div>
             </div>
           </div>
 

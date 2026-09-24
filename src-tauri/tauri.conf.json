@@ -1,0 +1,83 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-cli/schema.json",
+  "productName": "Storizine",
+  "version": "1.0.0",
+  "identifier": "com.storizine.reader",
+  "build": {
+    "beforeDevCommand": "npm run build:client",
+    "devUrl": "http://localhost:3000",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Storizine & BookForest Sanctuary",
+        "width": 1280,
+        "height": 860,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["epub"],
+        "name": "Electronic Publication",
+        "description": "EPUB Ebook format",
+        "mimeType": "application/epub+zip",
+        "role": "Viewer"
+      },
+      {
+        "ext": ["pdf"],
+        "name": "Portable Document Format",
+        "description": "PDF Book format",
+        "mimeType": "application/pdf",
+        "role": "Viewer"
+      },
+      {
+        "ext": ["mobi"],
+        "name": "Mobipocket Ebook",
+        "description": "Kindle / MOBI format",
+        "mimeType": "application/x-mobipocket-ebook",
+        "role": "Viewer"
+      },
+      {
+        "ext": ["txt", "markdown", "md"],
+        "name": "Text Document",
+        "description": "Plain Text and Markdown Literary Work",
+        "mimeType": "text/plain",
+        "role": "Viewer"
+      }
+    ],
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "10.15",
+      "exceptionDomain": "",
+      "signingIdentity": null,
+      "entitlements": null
+    },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    }
+  }
+}
