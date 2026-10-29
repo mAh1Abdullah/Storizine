@@ -68,7 +68,13 @@ export async function cacheBookOffline(book: BookForestEntry) {
 export async function getCachedBooks(): Promise<BookForestEntry[]> {
   try {
     const db = await getOfflineDB();
-    return await db.getAll('books');
+    const all = await db.getAll('books');
+    return all.filter((b: any) => {
+      if (!b) return false;
+      if (typeof b.number === 'number' && b.number >= 31 && b.number <= 60) return false;
+      if (typeof b.id === 'string' && /^(book|sz|pub-sz|bf)-(3[1-9]|[45][0-9]|60)$/i.test(b.id)) return false;
+      return true;
+    });
   } catch (err) {
     console.warn('Failed to read cached books:', err);
     return [];

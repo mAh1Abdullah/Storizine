@@ -46,7 +46,17 @@ function loadDB(): DBData {
   try {
     if (fs.existsSync(DB_FILE)) {
       const content = fs.readFileSync(DB_FILE, "utf-8");
-      return JSON.parse(content);
+      const parsed: DBData = JSON.parse(content);
+      // Ensure books #31 to #60 are removed from all records
+      if (Array.isArray(parsed.books)) {
+        parsed.books = parsed.books.filter((b: any) => {
+          if (!b) return false;
+          if (typeof b.number === 'number' && b.number >= 31 && b.number <= 60) return false;
+          if (typeof b.id === 'string' && /^(book|sz|pub-sz|bf)-(3[1-9]|[45][0-9]|60)$/i.test(b.id)) return false;
+          return true;
+        });
+      }
+      return parsed;
     }
   } catch (err) {
     console.error("Error reading database:", err);

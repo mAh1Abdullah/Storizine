@@ -75,7 +75,13 @@ export function App() {
   useEffect(() => {
     api.getBooks().then((books) => {
       if (books && books.length > 0) {
-        setBookForestEntries(books);
+        const sanitized = books.filter((b: any) => {
+          if (!b) return false;
+          if (typeof b.number === 'number' && b.number >= 31 && b.number <= 60) return false;
+          if (typeof b.id === 'string' && /^(book|sz|pub-sz|bf)-(3[1-9]|[45][0-9]|60)$/i.test(b.id)) return false;
+          return true;
+        });
+        setBookForestEntries(sanitized.length > 0 ? sanitized : INITIAL_BOOK_FOREST);
       } else {
         // Seed initial entries to backend & offline store
         INITIAL_BOOK_FOREST.forEach((b) => api.saveBook(b));

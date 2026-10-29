@@ -1,5 +1,4 @@
 import { PublishedBook, UpcomingBook, BookForestEntry, AuthorProfile, ReadingGoal } from '../types';
-import { STORIZINE_WORKS } from './storizineData';
 
 export const INITIAL_AUTHOR_PROFILE: AuthorProfile = {
   name: 'mAh Abdullah',
@@ -17,32 +16,7 @@ export const INITIAL_AUTHOR_PROFILE: AuthorProfile = {
   featuredQuote: '“Writing is the compass that navigates the uncharted realms of imagination.”',
 };
 
-const STORIZINE_PUBLISHED_BOOKS: PublishedBook[] = STORIZINE_WORKS.map((work) => ({
-  id: work.id,
-  title: work.title,
-  subtitle: work.titleBengali ? `${work.titleBengali} • ${work.subcategory || ''}` : work.subcategory,
-  series: work.series,
-  coverUrl: work.coverUrl,
-  genre: work.category,
-  releaseDate: '2024',
-  publisher: 'Self-Published / Wattpad & Webnovel',
-  blurb: work.blurbEnglish || work.blurbBengali || '',
-  excerpt: work.excerpt || `Chapter 1: The Beginning of ${work.title}\n\nThe journey began on a quiet evening when unexpected news reached the town. Every mystery has a starting point, and for ${work.title}, it was no exception.`,
-  buyLinks: work.readOnPlatforms ? work.readOnPlatforms.map((p) => ({ vendor: p.name, url: p.url })) : [
-    { vendor: 'Wattpad', url: 'https://www.wattpad.com' },
-    { vendor: 'Webnovel', url: 'https://www.webnovel.com' }
-  ],
-  praise: [
-    { quote: `A captivating work by mAh Abdullah.`, source: 'Storizine Review' },
-  ],
-  rating: 4.9,
-  pages: work.chapterCount ? work.chapterCount * 12 : 240,
-  formats: ['Ebook', 'Paperback'],
-  showOnFrontPage: true,
-}));
-
 export const INITIAL_PUBLISHED_BOOKS: PublishedBook[] = [
-  ...STORIZINE_PUBLISHED_BOOKS,
   {
     id: 'chronos-1',
     title: 'The Chronos Whisperer',

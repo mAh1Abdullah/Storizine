@@ -66,46 +66,61 @@ export const StorizineView: React.FC<StorizineViewProps> = ({
   const [editingPublished, setEditingPublished] = useState<PublishedBook | null>(null);
   const [editingUpcoming, setEditingUpcoming] = useState<UpcomingBook | null>(null);
 
-  // Combine static Storizine works with live published & upcoming books
+  // Canonical Storizine works (#1 to #30). Books #31 to #60 have been removed from all records.
   const combinedWorks = useMemo<StorizineWork[]>(() => {
-    const publishedAsWorks: StorizineWork[] = publishedBooks.map((b, idx) => ({
-      id: `pub-${b.id}`,
-      number: STORIZINE_WORKS.length + idx + 1,
-      title: b.title,
-      category: (b.genre.toLowerCase().includes('sci-fi') || b.genre.toLowerCase().includes('science')) 
-        ? 'Sci-Fi & Cyberpunk' 
-        : 'Novels & Series',
-      subcategory: b.genre,
-      series: b.series,
-      coverUrl: b.coverUrl,
-      language: 'English',
-      blurbEnglish: b.blurb,
-      excerpt: b.excerpt,
-      chapterCount: b.pages ? Math.round(b.pages / 10) : undefined,
-      readOnPlatforms: b.buyLinks.map(l => ({ name: l.vendor, url: l.url })),
-      tags: [b.genre, 'Published Novel', b.publisher, ...(b.series ? [b.series] : [])],
-      featured: true,
-    }));
+    // Only allow custom user-added works that are not duplicates of STORIZINE_WORKS and not in the removed #31-#60 range
+    const customPublishedAsWorks: StorizineWork[] = (publishedBooks || [])
+      .filter(
+        (b) =>
+          !STORIZINE_WORKS.some(
+            (w) => w.id === b.id || w.title.toLowerCase() === b.title.toLowerCase()
+          ) &&
+          !b.id.startsWith('sz-')
+      )
+      .map((b, idx) => ({
+        id: `pub-${b.id}`,
+        number: STORIZINE_WORKS.length + idx + 1,
+        title: b.title,
+        category: (b.genre.toLowerCase().includes('sci-fi') || b.genre.toLowerCase().includes('science')
+          ? ('Sci-Fi & Cyberpunk' as StorizineCategory)
+          : ('Novels & Series' as StorizineCategory)),
+        subcategory: b.genre,
+        series: b.series,
+        coverUrl: b.coverUrl,
+        language: 'English',
+        blurbEnglish: b.blurb,
+        excerpt: b.excerpt,
+        chapterCount: b.pages ? Math.round(b.pages / 10) : undefined,
+        readOnPlatforms: b.buyLinks.map((l) => ({ name: l.vendor, url: l.url })),
+        tags: [b.genre, 'Published Novel', b.publisher, ...(b.series ? [b.series] : [])],
+        featured: true,
+      }))
+      // Strictly remove books number #31 to #60
+      .filter((w) => w.number < 31 || w.number > 60);
 
-    const upcomingAsWorks: StorizineWork[] = upcomingBooks.map((u, idx) => ({
-      id: `up-${u.id}`,
-      number: STORIZINE_WORKS.length + publishedBooks.length + idx + 1,
-      title: `${u.title} (Upcoming)`,
-      category: (u.genre.toLowerCase().includes('sci-fi') || u.genre.toLowerCase().includes('science')) 
-        ? 'Sci-Fi & Cyberpunk' 
-        : 'Novels & Series',
-      subcategory: `Stage: ${u.writingStage} (${u.progressPercentage}%)`,
-      series: u.series,
-      coverUrl: u.coverUrl,
-      language: 'English',
-      blurbEnglish: u.blurb,
-      excerpt: u.teaserQuote,
-      readOnPlatforms: u.preorderLinks ? u.preorderLinks.map(l => ({ name: l.vendor, url: l.url })) : [],
-      tags: [u.genre, 'Upcoming Release', u.writingStage],
-      featured: false,
-    }));
+    const customUpcomingAsWorks: StorizineWork[] = (upcomingBooks || [])
+      .map((u, idx) => ({
+        id: `up-${u.id}`,
+        number: STORIZINE_WORKS.length + customPublishedAsWorks.length + idx + 1,
+        title: `${u.title} (Upcoming)`,
+        category: (u.genre.toLowerCase().includes('sci-fi') || u.genre.toLowerCase().includes('science')
+          ? ('Sci-Fi & Cyberpunk' as StorizineCategory)
+          : ('Novels & Series' as StorizineCategory)),
+        subcategory: `Stage: ${u.writingStage} (${u.progressPercentage}%)`,
+        series: u.series,
+        coverUrl: u.coverUrl,
+        language: 'English',
+        blurbEnglish: u.blurb,
+        excerpt: u.teaserQuote,
+        readOnPlatforms: u.preorderLinks ? u.preorderLinks.map((l) => ({ name: l.vendor, url: l.url })) : [],
+        tags: [u.genre, 'Upcoming Release', u.writingStage],
+        featured: false,
+      }))
+      // Strictly remove books number #31 to #60
+      .filter((w) => w.number < 31 || w.number > 60);
 
-    return [...publishedAsWorks, ...upcomingAsWorks, ...STORIZINE_WORKS];
+    // Canonical Storizine works (#1 to #30) appear first in canonical order
+    return [...STORIZINE_WORKS, ...customPublishedAsWorks, ...customUpcomingAsWorks];
   }, [publishedBooks, upcomingBooks]);
 
   const categories = useMemo(() => [
