@@ -28,10 +28,14 @@ import { SelectionToolbar } from './SelectionToolbar';
 import { AnnotationsDrawer } from '../AnnotationsDrawer';
 import { api } from '../../utils/api';
 import { createEpubBlob } from '../../utils/createEpub';
-import { cacheFileBlobOffline, getCachedFileBlobOffline } from '../../utils/offlineDb';
+import {
+  cacheFileBlobOffline,
+  getCachedFileBlobOffline,
+  saveBookLocationAndProgressOffline,
+} from '../../utils/offlineDb';
 
-// PDF worker configuration
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/pdf.worker.min.js`;
+// PDF worker configuration - using vendored Foliate PDF worker asset
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/foliate/pdf.worker.min.js';
 
 interface FoliateReaderProps {
   book: PublishedBook | BookForestEntry | BookForestItem | any;
@@ -55,12 +59,32 @@ export const FoliateReader: React.FC<FoliateReaderProps> = ({
   });
 
   // Navigation & Progress States
-  const [readingPercentage, setReadingPercentage] = useState(0);
-  const [currentCfi, setCurrentCfi] = useState<string>('');
-  const [totalPages, setTotalPages] = useState<number>(book?.pages || 320);
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [readingPercentage, setReadingPercentage] = useState(
+    book?.readingEngine?.percentage ||
+      (book?.currentProgressPages && book?.totalPages
+        ? Math.round((book.currentProgressPages / book.totalPages) * 100)
+        : 0)
+  );
+  const [currentCfi, setCurrentCfi] = useState<string>(
+    book?.readingEngine?.cfi || book?.lastCfi || ''
+  );
+  const [totalPages, setTotalPages] = useState<number>(book?.totalPages || book?.pages || 320);
+  const [currentPage, setCurrentPage] = useState<number>(
+    book?.currentProgressPages || 1
+  );
+  const [totalReadingTimeSec, setTotalReadingTimeSec] = useState<number>(
+    book?.readingEngine?.totalSecondsRead || 0
+  );
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Active reading duration counter
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTotalReadingTimeSec((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Annotations
   const [annotations, setAnnotations] = useState<BookAnnotation[]>([]);
@@ -165,6 +189,65 @@ export const FoliateReader: React.FC<FoliateReaderProps> = ({
     }
   };
 
+  // Synchronize progress with IndexedDB, backend API, Reading Challenge, and StoryGraph
+  const syncProgressAndSave = useCallback(
+    (newCfi: string, newPercentage: number, pageNumber?: number) => {
+      setCurrentCfi(newCfi);
+      setReadingPercentage(newPercentage);
+      if (pageNumber) setCurrentPage(pageNumber);
+
+      const calculatedPage =
+        pageNumber || Math.max(1, Math.round((newPercentage / 100) * totalPages));
+
+      const normalizedFormat: 'epub' | 'pdf' | 'mobi' | 'txt' | 'markdown' =
+        activeFormat === 'text' ? 'txt' : activeFormat;
+
+      // 1. Auto-save to offline IndexedDB
+      saveBookLocationAndProgressOffline(book.id, {
+        cfi: newCfi,
+        percentage: newPercentage,
+        totalSecondsRead: 5,
+        currentPage: calculatedPage,
+        totalPages,
+        format: normalizedFormat,
+      });
+
+      // 2. Auto-save to backend API
+      try {
+        api.saveReadingProgress({
+          bookId: book.id,
+          cfi: newCfi,
+          percentage: newPercentage,
+        });
+      } catch {
+        // Safe silent fail if offline
+      }
+
+      // 3. Synchronize with BookForest shelf, Reading Challenge, and StoryGraph
+      if (onUpdateBook) {
+        const isComplete = newPercentage >= 100;
+        const updatedBook: BookForestEntry = {
+          ...book,
+          lastCfi: newCfi,
+          currentProgressPages: calculatedPage,
+          readingStatus: isComplete ? 'read' : 'currently-reading',
+          dateFinished: isComplete
+            ? book.dateFinished || new Date().toISOString().split('T')[0]
+            : book.dateFinished,
+          readingEngine: {
+            ...(book.readingEngine || {}),
+            format: normalizedFormat,
+            cfi: newCfi,
+            percentage: newPercentage,
+            totalSecondsRead: (book.readingEngine?.totalSecondsRead || 0) + totalReadingTimeSec,
+          },
+        };
+        onUpdateBook(updatedBook);
+      }
+    },
+    [book, activeFormat, totalPages, totalReadingTimeSec, onUpdateBook]
+  );
+
   // Render PDF Engine
   const renderPdfPage = useCallback(
     async (pageNumber: number, pdf: any) => {
@@ -186,17 +269,12 @@ export const FoliateReader: React.FC<FoliateReaderProps> = ({
         await page.render(renderContext).promise;
         setPdfPageNum(pageNumber);
         const percent = Math.round((pageNumber / pdf.numPages) * 100);
-        setReadingPercentage(percent);
-        api.saveReadingProgress({
-          bookId: book.id,
-          cfi: `page-${pageNumber}`,
-          percentage: percent,
-        });
+        syncProgressAndSave(`page-${pageNumber}`, percent, pageNumber);
       } catch (err) {
         console.error('PDF Page render error', err);
       }
     },
-    [book.id, pdfScale]
+    [pdfScale, syncProgressAndSave]
   );
 
   // Initialize Isolated Iframe Reader for Text/Markdown/Fallback
@@ -332,19 +410,14 @@ export const FoliateReader: React.FC<FoliateReaderProps> = ({
         if (total > 0) {
           const current = scrollEl.scrollTop;
           const pct = Math.min(100, Math.round((current / total) * 100));
-          setReadingPercentage(pct);
-          api.saveReadingProgress({
-            bookId: book.id,
-            cfi: `scroll-${current}`,
-            percentage: pct,
-          });
+          syncProgressAndSave(`scroll-${Math.round(current)}`, pct);
         }
       };
 
       iframe.contentWindow?.addEventListener('scroll', handleScroll);
       setLoading(false);
     },
-    [activeTheme, book.id, book.title, settings]
+    [activeTheme, book.title, settings, syncProgressAndSave]
   );
 
   // Main Loader Effect
@@ -439,14 +512,8 @@ export const FoliateReader: React.FC<FoliateReaderProps> = ({
             // Track location
             rendition.on('relocated', (location: any) => {
               if (location?.start?.cfi) {
-                setCurrentCfi(location.start.cfi);
                 const pct = Math.round((location.start.percentage || 0) * 100);
-                setReadingPercentage(pct);
-                api.saveReadingProgress({
-                  bookId: book.id,
-                  cfi: location.start.cfi,
-                  percentage: pct,
-                });
+                syncProgressAndSave(location.start.cfi, pct);
               }
             });
 

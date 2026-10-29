@@ -24,9 +24,12 @@ import {
   Save,
   Check,
   Eye,
-  EyeOff
+  EyeOff,
+  Map
 } from 'lucide-react';
 import { STORIZINE_AUTHOR, STORIZINE_WORKS } from '../data/storizineData';
+import { STORIZINE_ASSETS, CATEGORY_ARTWORK_MAP } from '../data/storizineAssets';
+import { BlueprintPlanModal } from './BlueprintPlanModal';
 import { StorizineWork, StorizineCategory, PublishedBook, UpcomingBook } from '../types';
 
 interface StorizineViewProps {
@@ -57,6 +60,7 @@ export const StorizineView: React.FC<StorizineViewProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<StorizineCategory | 'All'>('All');
   const [localSearch, setLocalSearch] = useState('');
   const [selectedWork, setSelectedWork] = useState<StorizineWork | null>(null);
+  const [isBlueprintModalOpen, setIsBlueprintModalOpen] = useState(false);
 
   // Editing state for published/upcoming book
   const [editingPublished, setEditingPublished] = useState<PublishedBook | null>(null);
@@ -197,6 +201,16 @@ export const StorizineView: React.FC<StorizineViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {/* Blueprint & Roadmap Plan Modal Trigger */}
+          <button
+            onClick={() => setIsBlueprintModalOpen(true)}
+            className="px-3.5 py-1.5 rounded-xl bg-[#ebd9c5]/30 hover:bg-[#ebd9c5]/60 dark:bg-[#38332c] dark:hover:bg-[#453f37] text-[#2a2724] dark:text-[#f5f2e6] border border-[#d4a373]/40 font-bold text-xs flex items-center space-x-1.5 shadow-xs transition-all cursor-pointer"
+          >
+            <Map className="w-3.5 h-3.5 text-[#d4a373]" />
+            <span>Blueprints & Roadmap</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-[#d4a373] text-[#fffef2]">v3.0</span>
+          </button>
+
           {/* Add Published Work Button for Logged-In Author */}
           {isLoggedIn && onOpenAddPortfolioModal && (
             <button
@@ -217,6 +231,135 @@ export const StorizineView: React.FC<StorizineViewProps> = ({
               <span>Clubs</span>
             </button>
           )}
+        </div>
+      </div>
+
+      {/* Official Storizine Panoramic Hero Banner */}
+      <div className="relative rounded-3xl overflow-hidden border border-[#d4a373]/40 shadow-xl group">
+        <div className="relative h-56 sm:h-72 w-full bg-[#181614] overflow-hidden">
+          <img
+            src={STORIZINE_ASSETS.heroFloatingWorlds.path}
+            alt={STORIZINE_ASSETS.heroFloatingWorlds.title}
+            className="w-full h-full object-cover object-center group-hover:scale-[1.02] transition-transform duration-700"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#181614] via-[#181614]/30 to-transparent" />
+          <div className="absolute bottom-6 left-6 right-6 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
+            <div className="space-y-1">
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#d4a373] text-[#fffef2] tracking-wider uppercase font-sans">
+                Official Literary Magazine
+              </span>
+              <h2 className="text-2xl sm:text-4xl font-serif text-[#fffef2] tracking-tight drop-shadow-md">
+                STORIZINE <span className="font-light italic text-[#ebd9c5] text-lg sm:text-2xl">— Books for Bigger Worlds</span>
+              </h2>
+              <p className="text-xs sm:text-sm text-[#ebd9c5]/90 font-serif">
+                by <span className="font-bold text-[#fffef2]">{STORIZINE_AUTHOR.name}</span> • Fantasy, Sci-Fi, Adventure & Critical Lore
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsBlueprintModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-[#fffef2]/15 hover:bg-[#fffef2]/25 backdrop-blur-md text-[#fffef2] border border-[#fffef2]/20 text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer"
+              >
+                <FileText className="w-3.5 h-3.5 text-[#d4a373]" />
+                <span>View Blueprint v3.0</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4 Thematic Visual Pillar Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Story Lists Card */}
+        <div
+          onClick={() => setSelectedCategory('Novels & Series')}
+          className={`group rounded-2xl overflow-hidden border p-3 cursor-pointer transition-all ${
+            selectedCategory === 'Novels & Series'
+              ? 'border-[#d4a373] ring-2 ring-[#d4a373]/50 bg-[#d4a373]/10'
+              : 'border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#1f1d1a] hover:border-[#d4a373]'
+          }`}
+        >
+          <div className="h-28 rounded-xl overflow-hidden bg-[#181614] mb-2.5">
+            <img
+              src={STORIZINE_ASSETS.storyListsCard.path}
+              alt="Story Lists"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+          <h3 className="font-serif font-bold text-xs text-[#2a2724] dark:text-[#f5f2e6]">
+            Story Lists
+          </h3>
+          <p className="text-[10px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60 line-clamp-1">
+            Novels, Brave Boys & Sagas
+          </p>
+        </div>
+
+        {/* Short Stories Card */}
+        <div
+          onClick={() => setSelectedCategory('Short Stories')}
+          className={`group rounded-2xl overflow-hidden border p-3 cursor-pointer transition-all ${
+            selectedCategory === 'Short Stories'
+              ? 'border-[#d4a373] ring-2 ring-[#d4a373]/50 bg-[#d4a373]/10'
+              : 'border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#1f1d1a] hover:border-[#d4a373]'
+          }`}
+        >
+          <div className="h-28 rounded-xl overflow-hidden bg-[#181614] mb-2.5">
+            <img
+              src={STORIZINE_ASSETS.shortStoriesCard.path}
+              alt="Short Stories"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+          <h3 className="font-serif font-bold text-xs text-[#2a2724] dark:text-[#f5f2e6]">
+            Short Stories
+          </h3>
+          <p className="text-[10px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60 line-clamp-1">
+            Small Stories, Big Worlds
+          </p>
+        </div>
+
+        {/* Guidebooks Card */}
+        <div
+          onClick={() => setSelectedCategory('Guides & Features')}
+          className={`group rounded-2xl overflow-hidden border p-3 cursor-pointer transition-all ${
+            selectedCategory === 'Guides & Features'
+              ? 'border-[#d4a373] ring-2 ring-[#d4a373]/50 bg-[#d4a373]/10'
+              : 'border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#1f1d1a] hover:border-[#d4a373]'
+          }`}
+        >
+          <div className="h-28 rounded-xl overflow-hidden bg-[#181614] mb-2.5">
+            <img
+              src={STORIZINE_ASSETS.guidebooksVista.path}
+              alt="Guidebooks"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+          <h3 className="font-serif font-bold text-xs text-[#2a2724] dark:text-[#f5f2e6]">
+            Guidebooks
+          </h3>
+          <p className="text-[10px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60 line-clamp-1">
+            Explore Places & Lore
+          </p>
+        </div>
+
+        {/* Author Bio Card */}
+        <div
+          onClick={() => setSelectedCategory('All')}
+          className="group rounded-2xl overflow-hidden border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#1f1d1a] hover:border-[#d4a373] p-3 cursor-pointer transition-all"
+        >
+          <div className="h-28 rounded-xl overflow-hidden bg-[#181614] mb-2.5">
+            <img
+              src={STORIZINE_ASSETS.authorBioLandscape.path}
+              alt="Author Bio"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+          <h3 className="font-serif font-bold text-xs text-[#2a2724] dark:text-[#f5f2e6]">
+            Author Bio
+          </h3>
+          <p className="text-[10px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60 line-clamp-1">
+            {STORIZINE_AUTHOR.name} • Sylhet
+          </p>
         </div>
       </div>
 
@@ -668,6 +811,12 @@ export const StorizineView: React.FC<StorizineViewProps> = ({
           </form>
         </div>
       )}
+
+      {/* Blueprint & Roadmap Architecture Modal */}
+      <BlueprintPlanModal
+        isOpen={isBlueprintModalOpen}
+        onClose={() => setIsBlueprintModalOpen(false)}
+      />
 
     </div>
   );

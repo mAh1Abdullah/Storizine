@@ -57,6 +57,7 @@ export interface BookLoan {
   borrowerContact?: string;
   loanDate?: string;
   dueDate?: string;
+  notes?: string;
 }
 
 export interface JournalPrompts {
@@ -158,6 +159,7 @@ export interface AuthorProfile {
   title: string;
   bio: string;
   avatarUrl: string;
+  bannerUrl?: string;
   socialLinks: { platform: string; url: string }[];
   newsletterSignupUrl?: string;
   featuredQuote: string;
@@ -255,3 +257,125 @@ export interface WordLensDefinition {
   example?: string;
   bengaliTranslation?: string;
 }
+
+// 6. Writing Studio Types
+export type ProjectFormat = 'novel' | 'short-story' | 'serial' | 'poetry' | 'article' | 'screenplay';
+export type ProjectStatus = 'planning' | 'drafting' | 'revising' | 'editing' | 'completed' | 'archived';
+
+export interface WritingProject {
+  id: string;
+  title: string;
+  format: ProjectFormat;
+  language: string;
+  genre: string;
+  premise: string;
+  workflow: 'outline-first' | 'discovery' | 'hybrid';
+  status: ProjectStatus;
+  wordCount: number;
+  targetWordCount: number;
+  lastEdited: string;
+  charactersCount?: number;
+  scenesCount?: number;
+  currentDraft?: string;
+  storyBible?: {
+    protagonist?: string;
+    antagonist?: string;
+    setting?: string;
+    centralQuestion?: string;
+    keyThemes?: string[];
+  };
+}
+
+export interface WritingPrompt {
+  id: string;
+  title: string;
+  category: 'Sci-Fi' | 'Fantasy' | 'Mystery' | 'Literary' | 'Poetry' | 'Flash Fiction';
+  promptText: string;
+  difficulty: 'Quick Warmup' | 'Deep Dive' | 'Worldbuilding Challenge';
+  tags: string[];
+  author?: string;
+  timesUsed?: number;
+}
+
+export interface WritingSessionLog {
+  id: string;
+  date: string;
+  durationMinutes: number;
+  wordsWritten: number;
+  notes?: string;
+  projectTitle: string;
+}
+
+export interface WritingTemplate {
+  id: string;
+  title: string;
+  category: 'Plotting' | 'Character' | 'World' | 'Revision';
+  description: string;
+  structure: string[];
+}
+
+// 7. Learning Academy Types
+export interface AcademyLesson {
+  id: string;
+  title: string;
+  category: 'Craft & Structure' | 'Voice & Style' | 'Worldbuilding' | 'Publishing Strategy';
+  level: 'Beginner' | 'Intermediate' | 'Masterclass';
+  estimatedMinutes: number;
+  author: string;
+  summary: string;
+  content: string;
+  exercisesCount: number;
+  completed?: boolean;
+}
+
+export interface AcademyLearningPath {
+  id: string;
+  title: string;
+  level: string;
+  totalLessons: number;
+  completedLessons: number;
+  description: string;
+  modules: string[];
+}
+
+export interface AcademyExercise {
+  id: string;
+  title: string;
+  lessonId?: string;
+  prompt: string;
+  guidance: string;
+  sampleExemplar: string;
+}
+
+// 8. Publishing Center Types
+export type OpportunityType = 'Contest' | 'Literary Magazine' | 'Anthology' | 'Agent' | 'Indie Press' | 'Grant';
+
+export interface PublishingOpportunity {
+  id: string;
+  title: string;
+  organizer: string;
+  type: OpportunityType;
+  deadline: string;
+  compensation: string;
+  entryFee: string;
+  genres: string[];
+  languages: string[];
+  officialUrl: string;
+  verifiedDate: string;
+  status: 'Open' | 'Closing Soon' | 'Rolling' | 'Closed';
+  description: string;
+}
+
+export type SubmissionStatus = 'Preparing' | 'Ready' | 'Submitted' | 'Under Review' | 'Accepted' | 'Declined' | 'Withdrawn';
+
+export interface SubmissionTrack {
+  id: string;
+  opportunityTitle: string;
+  recipient: string;
+  projectTitle: string;
+  dateSent: string;
+  status: SubmissionStatus;
+  followUpDate?: string;
+  notes?: string;
+}
+

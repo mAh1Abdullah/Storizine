@@ -169,3 +169,63 @@ export async function getReadingProgressOffline(bookId: string): Promise<Reading
     return undefined;
   }
 }
+
+/**
+ * Auto-saves the reader's current location (cfi, percentage, totalReadingTimeSec)
+ * back into IndexedDB, updating both readingProgress and the cached book entry.
+ */
+export async function saveBookLocationAndProgressOffline(
+  bookId: string,
+  progress: {
+    cfi: string;
+    percentage: number;
+    totalSecondsRead?: number;
+    currentPage?: number;
+    totalPages?: number;
+    format?: 'epub' | 'pdf' | 'mobi' | 'txt' | 'markdown';
+  }
+) {
+  try {
+    const db = await getOfflineDB();
+
+    // 1. Save reading progress record
+    await db.put('readingProgress', {
+      bookId,
+      cfi: progress.cfi,
+      percentage: progress.percentage,
+      updated_at: new Date().toISOString(),
+    });
+
+    // 2. Update existing cached book if present
+    const existingBook = await db.get('books', bookId);
+    if (existingBook) {
+      const calculatedPages =
+        progress.currentPage ||
+        Math.round(((progress.percentage || 0) / 100) * (existingBook.totalPages || progress.totalPages || 320));
+
+      const updatedBook: BookForestEntry = {
+        ...existingBook,
+        lastCfi: progress.cfi,
+        currentProgressPages: calculatedPages,
+        readingStatus: progress.percentage >= 100 ? 'read' : 'currently-reading',
+        dateFinished: progress.percentage >= 100 ? (existingBook.dateFinished || new Date().toISOString().split('T')[0]) : existingBook.dateFinished,
+        readingEngine: {
+          ...(existingBook.readingEngine || {}),
+          format: progress.format || existingBook.readingEngine?.format || 'epub',
+          cfi: progress.cfi,
+          percentage: progress.percentage,
+          totalSecondsRead:
+            (existingBook.readingEngine?.totalSecondsRead || 0) + (progress.totalSecondsRead || 0),
+        },
+      };
+
+      await db.put('books', updatedBook);
+      return updatedBook;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Failed to save book location and progress to offline DB:', err);
+    return null;
+  }
+}
+

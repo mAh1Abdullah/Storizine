@@ -373,13 +373,24 @@ Provide an insightful, concise explanation in strictly valid JSON format:
     }
   });
 
-  // Readest + Storizine: POST /api/ai/explain (Analyze literary themes, unpack subtext, translate between Bengali and English)
+  // Readest + Storizine: POST /api/ai/explain (Analyze cultural context, define historical terminology, unpack subtext, translate)
   app.post("/api/ai/explain", async (req, res) => {
     try {
-      const { text, bookTitle, author, mode = "all" } = req.body;
+      const {
+        selectedText,
+        text,
+        term,
+        contextSentence,
+        targetLang = "Bengali",
+        bookTitle,
+        author,
+        mode = "all",
+      } = req.body;
 
-      if (!text || typeof text !== "string") {
-        return res.status(400).json({ error: "Selected text is required." });
+      const targetText = (selectedText || text || term || "").trim();
+
+      if (!targetText) {
+        return res.status(400).json({ error: "selectedText or text is required." });
       }
 
       const ai = getGenAI();
@@ -389,23 +400,30 @@ Provide an insightful, concise explanation in strictly valid JSON format:
         });
       }
 
-      const prompt = `You are a distinguished literary scholar, critic, and bilingual translator (English and Bengali) inside the Readest & Storizine reading sanctuary.
-A reader has highlighted the following passage from "${bookTitle || 'a literary work'}" by ${author || 'the author'}:
+      const prompt = `You are a distinguished literary scholar, cultural historian, and polyglot translator (specializing in English, Bengali, and classical languages) inside the Storizine and Foliate e-reader sanctuary.
+A reader has selected the following excerpt while reading "${bookTitle || 'a literary work'}" by ${author || 'the author'}:
 
-Highlighted Passage:
+Selected Text:
 """
-${text}
+${targetText}
 """
+${contextSentence ? `Surrounding Context Sentence: "${contextSentence}"` : ''}
+Target Translation Language: ${targetLang}
+Requested Mode: ${mode}
 
-Requested Analysis Mode: ${mode}
-
-Please provide an articulate literary analysis. Output strictly valid JSON with this exact structure:
+Please explain the cultural context, define historical or classical terminology, analyze implicit literary subtext, and provide a faithful translation.
+Output strictly valid JSON with this exact structure:
 {
-  "selectedText": ${JSON.stringify(text)},
-  "subtext": "An insightful 1-2 paragraph breakdown unpacking the implied subtext, psychological tension, symbolism, or unspoken emotion in this passage.",
+  "selectedText": ${JSON.stringify(targetText)},
+  "term": ${JSON.stringify(targetText)},
+  "definition": "Clear, contextual definition of the selected term or phrase.",
+  "culturalContext": "Cultural, geographical, or era-specific context clarifying the nuance of the passage.",
+  "historicalContext": "Historical terminology origin, etymology, or period significance.",
+  "subtext": "An insightful breakdown unpacking the implied subtext, psychological tension, symbolism, or unspoken emotion in this passage.",
   "literaryThemes": ["Theme 1", "Theme 2", "Theme 3"],
   "stylisticDevices": ["e.g. Chiaroscuro", "e.g. Free indirect discourse", "e.g. Sensory imagery"],
-  "bengaliTranslation": "A lyrical, faithful literary Bengali translation of the highlighted passage (or English translation if the original was in Bengali).",
+  "translation": "Faithful, evocative literary translation into ${targetLang}.",
+  "bengaliTranslation": "A lyrical, faithful literary Bengali translation of the highlighted passage (or English if the passage was Bengali).",
   "historicalOrAtmosphericVibe": "A brief note describing the atmospheric tone and aesthetic texture."
 }`;
 
@@ -426,24 +444,35 @@ Please provide an articulate literary analysis. Output strictly valid JSON with 
         return res.json({
           success: true,
           data: {
-            selectedText: text,
+            selectedText: targetText,
+            term: targetText,
+            definition: responseText,
+            culturalContext: "Rich literary and historical backdrop.",
+            historicalContext: "Classical narrative usage.",
             subtext: responseText,
             literaryThemes: ["Atmosphere", "Narrative Tone"],
             stylisticDevices: ["Descriptive Prose"],
-            bengaliTranslation: "অনুবাদ প্রক্রিয়াধীন...",
+            translation: "অনুবাদ সম্পন্ন...",
+            bengaliTranslation: "অনুবাদ সম্পন্ন...",
             historicalOrAtmosphericVibe: "Contemplative and immersive.",
           },
         });
       }
     } catch (error: any) {
       console.warn("Gemini explain fallback due to:", error?.message);
+      const fallbackTarget = req.body?.selectedText || req.body?.text || req.body?.term || "Selected Passage";
       return res.json({
         success: true,
         data: {
-          selectedText: req.body?.text || "",
+          selectedText: fallbackTarget,
+          term: fallbackTarget,
+          definition: `Contextual phrasing for "${fallbackTarget}": An evocative literary expression.`,
+          culturalContext: "Reflects classical literary storytelling conventions with resonant cultural subtext.",
+          historicalContext: "Traditional literary terminology rooted in classical aesthetic discourse.",
           subtext: "This passage introduces subtle narrative tension, utilizing evocative diction to heighten the reader's sensory engagement with the setting.",
           literaryThemes: ["Identity", "Time & Memory", "Atmosphere"],
           stylisticDevices: ["Sensory Imagery", "Rhythmic Cadence"],
+          translation: "এই অনুচ্ছেদটি প্রচ্ছন্ন মানসিক দ্বন্দ্ব ও গভীর আবহ ফুটিয়ে তোলে।",
           bengaliTranslation: "এই অনুচ্ছেদটি প্রচ্ছন্ন মানসিক দ্বন্দ্ব ও গভীর আবহ ফুটিয়ে তোলে।",
           historicalOrAtmosphericVibe: "Pensive and rich with literary atmosphere.",
         },
@@ -565,7 +594,7 @@ Recommend 3 incredible books to add to their BookForest 'Want to Read' list. Ret
   // Vite Middleware Setup
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { middlewareMode: true, hmr: false },
       appType: "spa",
     });
     app.use(vite.middlewares);

@@ -1,6 +1,6 @@
 {
-  "name": "Writer's Portfolio & BookForest",
-  "description": "An author portfolio showcase for published and upcoming books, featuring BookForest - a personal Goodreads-style reading tracker and physical/virtual library collection manager.",
+  "name": "Storizine & BookForest",
+  "description": "A unified literary platform combining Storizine magazine of stories, BookForest personal reading library, Writing Studio, Craft Academy, and Publishing Center.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -18,6 +18,11 @@ import {
   Quote,
   FileText,
   Layers,
+  Compass,
+  Award,
+  Send,
+  Menu,
+  X
 } from 'lucide-react';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -49,12 +54,16 @@ export const Header: React.FC<HeaderProps> = ({
   const currentPath = location.pathname;
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const isHomeActive = currentPath === '/' || currentPath === '/home';
-  const isStorizineActive = currentPath.startsWith('/storizine');
-  const isBookForestActive = currentPath.startsWith('/bookforest');
-  const isAccountActive = currentPath.startsWith('/account') || currentPath.startsWith('/dashboard');
+  const isHomeActive = currentPath === '/' || currentPath === '/app' || currentPath === '/home';
+  const isReadActive = currentPath.startsWith('/read') || currentPath.startsWith('/bookforest');
+  const isWriteActive = currentPath.startsWith('/write');
+  const isLearnActive = currentPath.startsWith('/learn');
+  const isMagazineActive = currentPath.startsWith('/magazine') || currentPath.startsWith('/storizine');
+  const isPublishActive = currentPath.startsWith('/publish');
+  const isMySpaceActive = currentPath.startsWith('/me') || currentPath.startsWith('/account');
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -69,10 +78,21 @@ export const Header: React.FC<HeaderProps> = ({
     };
   }, []);
 
-  // Close menu when route changes
+  // Close menus when route changes
   useEffect(() => {
     setIsUserMenuOpen(false);
+    setIsMobileMenuOpen(false);
   }, [location.pathname]);
+
+  const navLinks = [
+    { to: '/', label: 'Home', icon: BookOpen, active: isHomeActive },
+    { to: '/read', label: 'Read', icon: Library, active: isReadActive },
+    { to: '/write', label: 'Write', icon: Feather, active: isWriteActive },
+    { to: '/learn', label: 'Learn', icon: Award, active: isLearnActive },
+    { to: '/magazine', label: 'Magazine', icon: Compass, active: isMagazineActive },
+    { to: '/publish', label: 'Publish', icon: Send, active: isPublishActive },
+    { to: '/me', label: 'My Space', icon: User, active: isMySpaceActive },
+  ];
 
   return (
     <header
@@ -82,69 +102,47 @@ export const Header: React.FC<HeaderProps> = ({
           : 'bg-[#fffef2]/90 border-[#ebd9c5] text-[#2a2724]'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
         
-        {/* Author Brand */}
-        <Link to="/" className="flex items-center space-x-3 shrink-0 hover:opacity-90 transition-opacity">
-          <div className="w-10 h-10 rounded-xl bg-[#2a2724] dark:bg-[#2a2520] flex items-center justify-center text-[#d4a373] shadow-sm border border-[#d4a373]/30">
-            <Feather className="w-5 h-5" />
+        {/* Brand / Logo */}
+        <Link to="/" className="flex items-center space-x-2.5 shrink-0 hover:opacity-90 transition-opacity">
+          <div className="w-9 h-9 rounded-xl bg-[#2a2724] dark:bg-[#2a2520] flex items-center justify-center text-[#d4a373] shadow-xs border border-[#d4a373]/30">
+            <Feather className="w-4 h-4" />
           </div>
           <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-bold text-lg tracking-tight font-serif text-[#2a2724] dark:text-[#f5f2e6]">
-                {authorName}
+            <div className="flex items-center space-x-1.5">
+              <span className="font-bold text-base tracking-tight font-serif text-[#2a2724] dark:text-[#f5f2e6]">
+                Storizine
               </span>
-              <span className="px-2 py-0.5 text-xs font-bold rounded-md bg-[#d4a373]/15 text-[#b07843] dark:text-[#d4a373] border border-[#d4a373]/30 font-handwriting">
-                Warm Collector
-              </span>
+              <span className="text-[#d4a373] text-xs font-serif">&amp; BookForest</span>
             </div>
-            <p className="text-[11px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60 hidden sm:block">
-              Home &amp; BookForest Catalog
+            <p className="text-[10px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60 hidden md:block">
+              Unified Literary Platform
             </p>
           </div>
         </Link>
 
-        {/* Center Main Tab Switcher */}
-        <div className="flex items-center p-1 rounded-xl bg-[#f5f1e3] dark:bg-[#25221e] border border-[#ebd9c5] dark:border-[#38332c]">
-          <Link
-            id="btn-tab-portfolio"
-            to="/"
-            className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              isHomeActive
-                ? 'bg-[#fffef2] dark:bg-[#181614] text-[#8c5627] dark:text-[#d4a373] shadow-xs border border-[#ebd9c5] dark:border-[#38332c]'
-                : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Home Page</span>
-          </Link>
+        {/* Desktop Primary Hub Navigation Bar */}
+        <nav className="hidden lg:flex items-center p-1 rounded-xl bg-[#f5f1e3] dark:bg-[#25221e] border border-[#ebd9c5] dark:border-[#38332c] space-x-0.5">
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  link.active
+                    ? 'bg-[#2a2724] dark:bg-[#181614] text-[#d4a373] shadow-xs border border-[#d4a373]/40'
+                    : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5 text-[#d4a373]" />
+                <span>{link.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
 
-          <Link
-            id="btn-tab-storizine"
-            to="/storizine"
-            className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              isStorizineActive
-                ? 'bg-[#2a2724] text-[#d4a373] shadow-xs border border-[#d4a373]/40'
-                : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
-            }`}
-          >
-            <Feather className="w-3.5 h-3.5 text-[#d4a373]" />
-            <span>STORIZINE</span>
-          </Link>
-
-          <Link
-            id="btn-tab-bookforest"
-            to="/bookforest"
-            className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              isBookForestActive
-                ? 'bg-[#fffef2] dark:bg-[#181614] text-[#15803d] dark:text-[#4ade80] shadow-xs border border-[#ebd9c5] dark:border-[#38332c]'
-                : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
-            }`}
-          >
-            <Library className="w-3.5 h-3.5" />
-            <span>BookForest</span>
-          </Link>
-        </div>
 
         {/* Search Input */}
         <div className="relative hidden lg:block w-40 xl:w-52">
@@ -168,7 +166,7 @@ export const Header: React.FC<HeaderProps> = ({
                 id="btn-user-menu-trigger"
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 className={`flex items-center space-x-2 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                  isAccountActive || isUserMenuOpen
+                  isMySpaceActive || isUserMenuOpen
                     ? 'bg-[#2a2724] text-[#d4a373] border-[#d4a373]/50 shadow-xs'
                     : 'bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724] dark:text-[#f5f2e6] hover:bg-[#ebd9c5]/50 border-[#ebd9c5] dark:border-[#38332c]'
                 }`}
@@ -288,9 +286,42 @@ export const Header: React.FC<HeaderProps> = ({
             {darkMode ? <Sun className="w-4 h-4 text-[#d4a373]" /> : <Moon className="w-4 h-4 text-[#b07843]" />}
           </button>
 
+          {/* Mobile Menu Hamburger */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden p-2 rounded-xl text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:bg-[#f5f1e3] dark:hover:bg-[#25221e] transition-colors cursor-pointer"
+            aria-label="Toggle navigation menu"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5 text-[#d4a373]" /> : <Menu className="w-5 h-5" />}
+          </button>
+
         </div>
 
       </div>
+
+      {/* Mobile Drawer Menu */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden border-t border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] px-4 py-3 space-y-1 shadow-xl animate-in slide-in-from-top-2">
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  link.active
+                    ? 'bg-[#2a2724] dark:bg-[#25221e] text-[#d4a373] border border-[#d4a373]/40'
+                    : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:bg-[#f5f1e3] dark:hover:bg-[#221f1c]'
+                }`}
+              >
+                <Icon className="w-4 h-4 text-[#d4a373]" />
+                <span>{link.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </header>
   );
 };

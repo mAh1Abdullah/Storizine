@@ -30,7 +30,13 @@ import {
   ArrowRight,
   Smile,
   Compass,
-  HeartHandshake
+  HeartHandshake,
+  Calendar,
+  AlertTriangle,
+  X,
+  Phone,
+  Mail,
+  UserCheck
 } from 'lucide-react';
 import { LibrarySection } from './LibrarySection';
 import { ClubsSection } from './ClubsSection';
@@ -75,13 +81,60 @@ export const BookForestView: React.FC<BookForestViewProps> = ({
   isLoggedIn,
   onOpenLoginModal,
 }) => {
-  const [subTab, setSubTab] = useState<'shelf' | 'choice-awards' | 'quotes' | 'library' | 'clubs' | 'collection' | 'analytics'>('shelf');
+  const [subTab, setSubTab] = useState<'shelf' | 'lent-out' | 'choice-awards' | 'quotes' | 'library' | 'clubs' | 'collection' | 'analytics'>('shelf');
   const [statusFilter, setStatusFilter] = useState<ReadingStatus | 'all' | 'loaned-out'>('all');
   const [locationFilter, setLocationFilter] = useState<CollectionLocation | 'all'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
   // Aesthetic Journal Modal state (Goodnotes Feature)
   const [selectedJournalBook, setSelectedJournalBook] = useState<BookForestEntry | null>(null);
+
+  // Lending & Loan Tracker Modal state (BookBuddy+ Feature)
+  const [isLendModalOpen, setIsLendModalOpen] = useState(false);
+  const [selectedBookForLoan, setSelectedBookForLoan] = useState<BookForestEntry | null>(null);
+  const [borrowerName, setBorrowerName] = useState('');
+  const [borrowerContact, setBorrowerContact] = useState('');
+  const [loanDueDate, setLoanDueDate] = useState('');
+  const [loanNotes, setLoanNotes] = useState('');
+  const [lendingSearch, setLendingSearch] = useState('');
+
+  const handleOpenLendModal = (book?: BookForestEntry) => {
+    if (book) {
+      setSelectedBookForLoan(book);
+    } else {
+      const available = entries.find((e) => !e.loan?.isLoanedOut);
+      setSelectedBookForLoan(available || null);
+    }
+    setBorrowerName('');
+    setBorrowerContact('');
+    const d = new Date();
+    d.setDate(d.getDate() + 14);
+    setLoanDueDate(d.toISOString().split('T')[0]);
+    setLoanNotes('');
+    setIsLendModalOpen(true);
+  };
+
+  const handleSaveLoan = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBookForLoan || !borrowerName.trim()) return;
+
+    const updated: BookForestEntry = {
+      ...selectedBookForLoan,
+      loan: {
+        isLoanedOut: true,
+        borrowerName: borrowerName.trim(),
+        borrowerContact: borrowerContact.trim() || undefined,
+        loanDate: new Date().toISOString().split('T')[0],
+        dueDate: loanDueDate || undefined,
+        notes: loanNotes.trim() || undefined,
+      },
+    };
+
+    if (onSaveEntry) {
+      onSaveEntry(updated);
+    }
+    setIsLendModalOpen(false);
+  };
 
   const handleImportEntry = (entry: BookForestEntry) => {
     if (onSaveEntry) {
@@ -106,11 +159,37 @@ export const BookForestView: React.FC<BookForestViewProps> = ({
         borrowerContact: book.loan?.borrowerContact,
         loanDate: book.loan?.loanDate,
         dueDate: undefined,
+        notes: book.loan?.notes,
       },
     };
     if (onSaveEntry) {
       onSaveEntry(updated);
     }
+  };
+
+  const handleExtendDueDate = (book: BookForestEntry, daysToAdd: number = 7) => {
+    const currentDue = book.loan?.dueDate ? new Date(book.loan.dueDate) : new Date();
+    currentDue.setDate(currentDue.getDate() + daysToAdd);
+    const updated: BookForestEntry = {
+      ...book,
+      loan: {
+        ...(book.loan || { isLoanedOut: true }),
+        dueDate: currentDue.toISOString().split('T')[0],
+      },
+    };
+    if (onSaveEntry) {
+      onSaveEntry(updated);
+    }
+  };
+
+  const getDaysRemainingOrOverdue = (dueDateStr?: string) => {
+    if (!dueDateStr) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(dueDateStr);
+    due.setHours(0, 0, 0, 0);
+    const diffTime = due.getTime() - today.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
   // Filter logic (supports loaned-out filter)
@@ -168,6 +247,23 @@ export const BookForestView: React.FC<BookForestViewProps> = ({
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span>Bookshelf</span>
+          </button>
+
+          <button
+            onClick={() => setSubTab('lent-out')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+              subTab === 'lent-out'
+                ? 'bg-[#fffef2] dark:bg-[#181614] text-amber-700 dark:text-amber-400 shadow-xs border border-[#ebd9c5] dark:border-[#38332c]'
+                : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span>Lending Tracker</span>
+            {statusCounts.loanedOut > 0 && (
+              <span className="ml-1 px-1.5 py-0.2 bg-amber-500 text-white rounded-full text-[10px] font-mono font-bold">
+                {statusCounts.loanedOut}
+              </span>
+            )}
           </button>
 
           <button
@@ -634,11 +730,23 @@ export const BookForestView: React.FC<BookForestViewProps> = ({
 
                       {isLoggedIn && !book.loan?.isLoanedOut && (
                         <button
-                          onClick={() => onEditEntry(book)}
-                          className="text-[11px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60 hover:text-[#d4a373] flex items-center gap-1 font-semibold"
+                          onClick={() => handleOpenLendModal(book)}
+                          className="px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1 transition"
+                          title="Lend this copy to a contact"
                         >
-                          <ShieldCheck className="w-3 h-3" />
+                          <ShieldCheck className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                           <span>Lend</span>
+                        </button>
+                      )}
+
+                      {isLoggedIn && book.loan?.isLoanedOut && (
+                        <button
+                          onClick={() => handleReturnBook(book)}
+                          className="px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 text-[11px] font-bold flex items-center gap-1 transition"
+                          title="Mark copy as returned to shelf"
+                        >
+                          <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                          <span>Return</span>
                         </button>
                       )}
                     </div>
@@ -681,12 +789,32 @@ export const BookForestView: React.FC<BookForestViewProps> = ({
                       </td>
                       <td className="p-3 text-[11px]">
                         {b.loan?.isLoanedOut ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 w-fit">
-                            <ShieldCheck className="w-3 h-3" />
-                            Lent to {b.loan.borrowerName || 'Friend'}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 w-fit">
+                              <ShieldCheck className="w-3 h-3" />
+                              Lent to {b.loan.borrowerName || 'Friend'}
+                            </span>
+                            {isLoggedIn && (
+                              <button
+                                onClick={() => handleReturnBook(b)}
+                                className="text-[10px] font-bold text-emerald-600 hover:underline"
+                              >
+                                Mark Returned
+                              </button>
+                            )}
+                          </div>
                         ) : (
-                          <span className="text-[#2a2724]/40 dark:text-[#f5f2e6]/40">In Library</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[#2a2724]/40 dark:text-[#f5f2e6]/40">In Library</span>
+                            {isLoggedIn && (
+                              <button
+                                onClick={() => handleOpenLendModal(b)}
+                                className="text-[10px] font-bold text-amber-600 hover:underline"
+                              >
+                                Lend
+                              </button>
+                            )}
+                          </div>
                         )}
                       </td>
                       <td className="p-3 text-xs text-[#b07843] dark:text-[#d4a373] font-handwriting">
@@ -726,6 +854,359 @@ export const BookForestView: React.FC<BookForestViewProps> = ({
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* SUB-TAB: LENDING & LOAN TRACKER (BookBuddy+ Parity) */}
+      {subTab === 'lent-out' && (
+        <div className="space-y-6">
+          {/* Header Banner */}
+          <div className="p-6 bg-[#fbf9ee] dark:bg-[#221f1c] rounded-3xl border border-[#ebd9c5] dark:border-[#38332c] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <span className="p-2 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                  <HeartHandshake className="w-5 h-5" />
+                </span>
+                <h3 className="font-serif text-2xl text-[#2a2724] dark:text-[#f5f2e6]">
+                  Lending & Loan Tracker
+                </h3>
+              </div>
+              <p className="text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70 max-w-2xl leading-relaxed">
+                Track physical books lent out to friends, book clubs, and colleagues. Monitor due dates, contact info, and book condition notes with BookBuddy+ parity.
+              </p>
+            </div>
+
+            {isLoggedIn && (
+              <button
+                onClick={() => handleOpenLendModal()}
+                className="px-4 py-2.5 rounded-xl bg-[#d4a373] hover:bg-[#c39262] text-[#181614] font-bold text-xs flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Lend a Book</span>
+              </button>
+            )}
+          </div>
+
+          {/* Metric Summary Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div className="p-4 bg-[#fbf9ee] dark:bg-[#221f1c] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] flex items-center space-x-3 shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400 shrink-0">
+                <HeartHandshake className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold font-serif text-[#2a2724] dark:text-[#f5f2e6]">
+                  {entries.filter((e) => e.loan?.isLoanedOut).length}
+                </div>
+                <div className="text-[11px] font-semibold text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
+                  Active Loans
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-[#fbf9ee] dark:bg-[#221f1c] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] flex items-center space-x-3 shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-700 dark:text-rose-400 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold font-serif text-rose-600 dark:text-rose-400">
+                  {
+                    entries.filter(
+                      (e) =>
+                        e.loan?.isLoanedOut &&
+                        e.loan?.dueDate &&
+                        getDaysRemainingOrOverdue(e.loan.dueDate)! < 0
+                    ).length
+                  }
+                </div>
+                <div className="text-[11px] font-semibold text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
+                  Overdue Returns
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-[#fbf9ee] dark:bg-[#221f1c] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] flex items-center space-x-3 shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-[#d4a373]/15 border border-[#d4a373]/30 flex items-center justify-center text-[#b07843] dark:text-[#d4a373] shrink-0">
+                <UserCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold font-serif text-[#2a2724] dark:text-[#f5f2e6]">
+                  {
+                    new Set(
+                      entries
+                        .filter((e) => e.loan?.isLoanedOut)
+                        .map((e) => e.loan?.borrowerName)
+                        .filter(Boolean)
+                    ).size
+                  }
+                </div>
+                <div className="text-[11px] font-semibold text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
+                  Borrowing Contacts
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-[#fbf9ee] dark:bg-[#221f1c] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] flex items-center space-x-3 shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 shrink-0">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold font-serif text-[#2a2724] dark:text-[#f5f2e6]">
+                  {entries.filter((e) => !e.loan?.isLoanedOut && e.loan?.borrowerName).length}
+                </div>
+                <div className="text-[11px] font-semibold text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
+                  Returned to Shelf
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Search and Filters Bar */}
+          <div className="p-3 bg-[#f5f1e3] dark:bg-[#25221e] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#2a2724]/50 dark:text-[#f5f2e6]/50" />
+              <input
+                type="text"
+                placeholder="Search by borrower name, contact, or title..."
+                value={lendingSearch}
+                onChange={(e) => setLendingSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] text-[#2a2724] dark:text-[#f5f2e6] placeholder:text-[#2a2724]/40"
+              />
+            </div>
+
+            <div className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60 font-semibold">
+              Showing {entries.filter((e) => e.loan?.isLoanedOut).length} currently borrowed book(s)
+            </div>
+          </div>
+
+          {/* Loaned Books Cards */}
+          {(() => {
+            const activeLoans = entries.filter((e) => {
+              if (!e.loan?.isLoanedOut) return false;
+              if (!lendingSearch.trim()) return true;
+              const q = lendingSearch.toLowerCase();
+              return (
+                e.title.toLowerCase().includes(q) ||
+                e.author.toLowerCase().includes(q) ||
+                (e.loan.borrowerName && e.loan.borrowerName.toLowerCase().includes(q)) ||
+                (e.loan.borrowerContact && e.loan.borrowerContact.toLowerCase().includes(q))
+              );
+            });
+
+            if (activeLoans.length === 0) {
+              return (
+                <div className="p-12 text-center bg-[#fbf9ee] dark:bg-[#221f1c] rounded-3xl border border-[#ebd9c5] dark:border-[#38332c] space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-600 dark:text-amber-400 mx-auto">
+                    <HeartHandshake className="w-6 h-6" />
+                  </div>
+                  <h4 className="font-serif text-lg text-[#2a2724] dark:text-[#f5f2e6]">
+                    No Books Currently Loaned Out
+                  </h4>
+                  <p className="text-xs text-[#2a2724]/60 dark:text-[#f5f2e6]/60 max-w-sm mx-auto">
+                    {lendingSearch
+                      ? 'No active loans matched your search query.'
+                      : 'All your physical and digital books are safely resting in your BookForest. Lend a book to a contact to start tracking here.'}
+                  </p>
+                  {isLoggedIn && !lendingSearch && (
+                    <button
+                      onClick={() => handleOpenLendModal()}
+                      className="px-4 py-2 rounded-xl bg-[#d4a373] hover:bg-[#c39262] text-[#181614] font-bold text-xs inline-flex items-center space-x-1.5 transition"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Lend Your First Book</span>
+                    </button>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {activeLoans.map((book) => {
+                  const daysDiff = getDaysRemainingOrOverdue(book.loan?.dueDate);
+                  const isOverdue = daysDiff !== null && daysDiff < 0;
+                  const isDueToday = daysDiff === 0;
+
+                  return (
+                    <div
+                      key={book.id}
+                      className="bg-[#fbf9ee] dark:bg-[#221f1c] rounded-3xl border border-[#ebd9c5] dark:border-[#38332c] p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+                    >
+                      <div className="space-y-3.5">
+                        {/* Book Header */}
+                        <div className="flex gap-3.5 items-start">
+                          <img
+                            src={book.coverUrl}
+                            alt={book.title}
+                            className="w-16 h-24 object-cover rounded-xl shadow-xs border border-[#ebd9c5] dark:border-[#38332c] shrink-0"
+                          />
+                          <div className="space-y-1 min-w-0">
+                            <h4 className="font-serif font-bold text-base text-[#2a2724] dark:text-[#f5f2e6] line-clamp-1">
+                              {book.title}
+                            </h4>
+                            <p className="text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70 truncate">
+                              by {book.author}
+                            </p>
+                            <div className="flex flex-wrap gap-1 pt-1">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#f5f1e3] dark:bg-[#2e2a25] text-[#2a2724] dark:text-[#f5f2e6] border border-[#ebd9c5] dark:border-[#38332c]">
+                                📍 {book.collectionLocation}
+                              </span>
+                              {book.ownedFormats?.[0] && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#d4a373]/20 text-[#b07843] dark:text-[#d4a373]">
+                                  {book.ownedFormats[0]}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Borrower Information Card */}
+                        <div className="p-3.5 bg-[#f5f1e3]/80 dark:bg-[#282420] rounded-2xl border border-[#ebd9c5]/60 dark:border-[#38332c] space-y-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-[#b07843] dark:text-[#d4a373] text-[10px] uppercase tracking-wider flex items-center gap-1">
+                              <UserCheck className="w-3.5 h-3.5" />
+                              Borrower:
+                            </span>
+                            <span className="font-bold text-sm text-[#2a2724] dark:text-[#f5f2e6]">
+                              {book.loan?.borrowerName || 'Friend'}
+                            </span>
+                          </div>
+
+                          {book.loan?.borrowerContact && (
+                            <div className="flex items-center justify-between text-[11px] text-[#2a2724]/70 dark:text-[#f5f2e6]/70">
+                              <span className="flex items-center gap-1">
+                                <Mail className="w-3 h-3 text-[#d4a373]" />
+                                Contact:
+                              </span>
+                              <span className="font-mono">{book.loan.borrowerContact}</span>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between text-[11px] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 pt-1 border-t border-[#ebd9c5]/50 dark:border-[#38332c]/50">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-[#d4a373]" />
+                              Loan Date:
+                            </span>
+                            <span>{book.loan?.loanDate || 'Recent'}</span>
+                          </div>
+
+                          {book.loan?.dueDate && (
+                            <div className="flex items-center justify-between text-[11px] pt-1">
+                              <span className="flex items-center gap-1 text-[#2a2724]/70 dark:text-[#f5f2e6]/70">
+                                <Clock className="w-3 h-3 text-[#d4a373]" />
+                                Due Date:
+                              </span>
+                              <div>
+                                {isOverdue ? (
+                                  <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30">
+                                    Overdue by {Math.abs(daysDiff!)} day{Math.abs(daysDiff!) > 1 ? 's' : ''}
+                                  </span>
+                                ) : isDueToday ? (
+                                  <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                                    Due Today
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                                    Due in {daysDiff} day{daysDiff! > 1 ? 's' : ''}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {book.loan?.notes && (
+                            <div className="mt-1.5 pt-1.5 border-t border-[#ebd9c5]/40 dark:border-[#38332c]/40 text-[11px] italic text-[#2a2724]/70 dark:text-[#f5f2e6]/70">
+                              Note: “{book.loan.notes}”
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Card Action Buttons */}
+                      <div className="pt-3 border-t border-[#ebd9c5] dark:border-[#38332c] flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <button
+                          onClick={() => onOpenReader?.(book)}
+                          className="px-2.5 py-1.5 rounded-xl bg-[#d4a373]/15 hover:bg-[#d4a373]/25 text-[#b07843] dark:text-[#d4a373] font-bold text-xs flex items-center space-x-1 transition border border-[#d4a373]/30"
+                          title="Preview in Reader"
+                        >
+                          <BookOpen className="w-3.5 h-3.5" />
+                          <span>Preview</span>
+                        </button>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleExtendDueDate(book, 7)}
+                            className="px-2 py-1.5 rounded-xl bg-[#f5f1e3] dark:bg-[#282420] hover:bg-[#ebd9c5] dark:hover:bg-[#38332c] text-[#2a2724] dark:text-[#f5f2e6] font-semibold text-[11px] transition border border-[#ebd9c5] dark:border-[#38332c]"
+                            title="Extend due date by 7 days"
+                          >
+                            +7 Days
+                          </button>
+
+                          {isLoggedIn && (
+                            <button
+                              onClick={() => handleReturnBook(book)}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center space-x-1 shadow-xs transition"
+                              title="Mark copy returned to personal shelf"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Mark Returned</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          {/* Past Loans / Returned Shelf History */}
+          {entries.filter((e) => !e.loan?.isLoanedOut && e.loan?.borrowerName).length > 0 && (
+            <div className="mt-8 pt-6 border-t border-[#ebd9c5] dark:border-[#38332c] space-y-3">
+              <h4 className="font-serif text-lg text-[#2a2724] dark:text-[#f5f2e6] flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Returned Loan History</span>
+              </h4>
+              <div className="bg-[#fbf9ee] dark:bg-[#221f1c] rounded-2xl border border-[#ebd9c5] dark:border-[#38332c] overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#f5f1e3] dark:bg-[#25221e] text-[#2a2724]/70 dark:text-[#f5f2e6]/70 font-bold uppercase">
+                    <tr>
+                      <th className="p-3">Book Title</th>
+                      <th className="p-3">Past Borrower</th>
+                      <th className="p-3">Contact</th>
+                      <th className="p-3">Loan Date</th>
+                      <th className="p-3 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#ebd9c5] dark:divide-[#38332c]">
+                    {entries
+                      .filter((e) => !e.loan?.isLoanedOut && e.loan?.borrowerName)
+                      .map((b) => (
+                        <tr key={b.id} className="hover:bg-[#f5f1e3]/40 dark:hover:bg-[#282420]">
+                          <td className="p-3 font-semibold text-[#2a2724] dark:text-[#f5f2e6]">
+                            {b.title}
+                          </td>
+                          <td className="p-3 text-[#b07843] dark:text-[#d4a373] font-bold">
+                            {b.loan?.borrowerName}
+                          </td>
+                          <td className="p-3 text-[#2a2724]/60 dark:text-[#f5f2e6]/60 font-mono">
+                            {b.loan?.borrowerContact || '—'}
+                          </td>
+                          <td className="p-3 text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
+                            {b.loan?.loanDate || 'Past'}
+                          </td>
+                          <td className="p-3 text-right">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                              Returned to Shelf
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -851,6 +1332,173 @@ export const BookForestView: React.FC<BookForestViewProps> = ({
         onClose={() => setSelectedJournalBook(null)}
         book={selectedJournalBook}
       />
+
+      {/* 5. LEND A BOOK MODAL (BookBuddy+ Parity) */}
+      {isLendModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-[#fffef2] dark:bg-[#1a1816] w-full max-w-lg rounded-3xl border border-[#ebd9c5] dark:border-[#38332c] shadow-2xl p-6 sm:p-7 space-y-5 text-xs">
+            <div className="flex items-center justify-between pb-3 border-b border-[#ebd9c5] dark:border-[#38332c]">
+              <div className="flex items-center space-x-2">
+                <span className="p-2 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                  <HeartHandshake className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="font-serif text-lg text-[#2a2724] dark:text-[#f5f2e6]">
+                    Lend a Book
+                  </h3>
+                  <p className="text-[11px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
+                    BookBuddy+ Lending Tracker
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsLendModalOpen(false)}
+                className="p-2 rounded-xl text-[#2a2724]/60 dark:text-[#f5f2e6]/60 hover:bg-[#f5f1e3] dark:hover:bg-[#282420] transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveLoan} className="space-y-4">
+              {/* Select Book */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-[#b07843] dark:text-[#d4a373] text-[11px] uppercase tracking-wider block">
+                  Select Book to Lend: *
+                </label>
+                <select
+                  value={selectedBookForLoan?.id || ''}
+                  onChange={(e) => {
+                    const found = entries.find((b) => b.id === e.target.value);
+                    setSelectedBookForLoan(found || null);
+                  }}
+                  required
+                  className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#25221e] text-[#2a2724] dark:text-[#f5f2e6] font-semibold text-xs focus:ring-2 focus:ring-[#d4a373] outline-hidden"
+                >
+                  <option value="">-- Choose a book from your shelf --</option>
+                  {entries
+                    .filter((b) => !b.loan?.isLoanedOut || b.id === selectedBookForLoan?.id)
+                    .map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.title} — {b.author} ({b.collectionLocation})
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* Borrower Name */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-[#b07843] dark:text-[#d4a373] text-[11px] uppercase tracking-wider block">
+                  Borrower Name: *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g., Sarah Jenkins, Uncle Marcus, Fable Clubmate"
+                  value={borrowerName}
+                  onChange={(e) => setBorrowerName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#25221e] text-[#2a2724] dark:text-[#f5f2e6] text-xs focus:ring-2 focus:ring-[#d4a373] outline-hidden"
+                />
+              </div>
+
+              {/* Contact Info */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-[#b07843] dark:text-[#d4a373] text-[11px] uppercase tracking-wider block">
+                  Contact Info (Phone, Email, Social):
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., sarah@gmail.com or (555) 019-2834 or @sarahreads"
+                  value={borrowerContact}
+                  onChange={(e) => setBorrowerContact(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#25221e] text-[#2a2724] dark:text-[#f5f2e6] text-xs focus:ring-2 focus:ring-[#d4a373] outline-hidden"
+                />
+              </div>
+
+              {/* Due Date & Quick Presets */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-[#b07843] dark:text-[#d4a373] text-[11px] uppercase tracking-wider block">
+                  Return Due Date:
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={loanDueDate}
+                    onChange={(e) => setLoanDueDate(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#25221e] text-[#2a2724] dark:text-[#f5f2e6] text-xs focus:ring-2 focus:ring-[#d4a373] outline-hidden"
+                  />
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 7);
+                        setLoanDueDate(d.toISOString().split('T')[0]);
+                      }}
+                      className="px-2.5 py-2 rounded-lg bg-[#f5f1e3] dark:bg-[#282420] text-[#2a2724] dark:text-[#f5f2e6] font-semibold text-[11px] hover:bg-[#ebd9c5] border border-[#ebd9c5] dark:border-[#38332c]"
+                    >
+                      +7d
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 14);
+                        setLoanDueDate(d.toISOString().split('T')[0]);
+                      }}
+                      className="px-2.5 py-2 rounded-lg bg-[#f5f1e3] dark:bg-[#282420] text-[#2a2724] dark:text-[#f5f2e6] font-semibold text-[11px] hover:bg-[#ebd9c5] border border-[#ebd9c5] dark:border-[#38332c]"
+                    >
+                      +14d
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 30);
+                        setLoanDueDate(d.toISOString().split('T')[0]);
+                      }}
+                      className="px-2.5 py-2 rounded-lg bg-[#f5f1e3] dark:bg-[#282420] text-[#2a2724] dark:text-[#f5f2e6] font-semibold text-[11px] hover:bg-[#ebd9c5] border border-[#ebd9c5] dark:border-[#38332c]"
+                    >
+                      +30d
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Loan / Condition Notes */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-[#b07843] dark:text-[#d4a373] text-[11px] uppercase tracking-wider block">
+                  Condition & Loan Notes:
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g., Pristine hardcover with dust jacket. Borrowed for October spooky book club."
+                  value={loanNotes}
+                  onChange={(e) => setLoanNotes(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#25221e] text-[#2a2724] dark:text-[#f5f2e6] text-xs focus:ring-2 focus:ring-[#d4a373] outline-hidden"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="pt-3 border-t border-[#ebd9c5] dark:border-[#38332c] flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setIsLendModalOpen(false)}
+                  className="px-4 py-2 rounded-xl font-bold text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:bg-[#f5f1e3] dark:hover:bg-[#282420] transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!selectedBookForLoan || !borrowerName.trim()}
+                  className="px-5 py-2 rounded-xl font-bold text-xs bg-[#d4a373] hover:bg-[#c39262] disabled:opacity-50 text-[#181614] shadow-sm transition"
+                >
+                  Confirm Loan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

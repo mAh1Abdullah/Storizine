@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Header } from './components/Header';
+import { HomeDashboardView } from './components/home/HomeDashboardView';
 import { PortfolioView } from './components/PortfolioView';
 import { StorizineView } from './components/StorizineView';
 import { BookForestView } from './components/BookForestView';
+import { WritingStudioView } from './components/writing/WritingStudioView';
+import { WritingAcademyView } from './components/learning/WritingAcademyView';
+import { PublishingCenterView } from './components/publishing/PublishingCenterView';
+import { MySpaceView } from './components/myspace/MySpaceView';
 import { WriterDashboardView } from './components/WriterDashboardView';
 import { SampleChapterModal } from './components/SampleChapterModal';
 import { AddPublishedBookModal } from './components/AddPublishedBookModal';
@@ -104,12 +109,23 @@ export function App() {
   const handleSaveBookForestEntry = (entry: BookForestEntry) => {
     api.saveBook(entry);
     const existingIndex = bookForestEntries.findIndex((b) => b.id === entry.id);
+    let updated: BookForestEntry[];
     if (existingIndex >= 0) {
-      const updated = [...bookForestEntries];
+      updated = [...bookForestEntries];
       updated[existingIndex] = entry;
       setBookForestEntries(updated);
     } else {
-      setBookForestEntries([entry, ...bookForestEntries]);
+      updated = [entry, ...bookForestEntries];
+      setBookForestEntries(updated);
+    }
+
+    // Synchronize Reading Challenge & StoryGraph analytics automatically
+    const readCount = updated.filter((b) => b.readingStatus === 'read').length;
+    if (readCount > (readingGoal.completedBooks || 0)) {
+      setReadingGoal((prev) => ({
+        ...prev,
+        completedBooks: readCount,
+      }));
     }
   };
 
@@ -172,9 +188,28 @@ export function App() {
       {/* Main View Area with Routes */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
         <Routes>
-          {/* Home Page (formerly Frontpage) */}
+          {/* 1. Home Dashboard Page */}
           <Route
             path="/"
+            element={
+              <HomeDashboardView
+                author={authorProfile}
+                publishedBooks={publishedBooks}
+                upcomingBooks={upcomingBooks}
+                bookForestEntries={bookForestEntries}
+                readingGoal={readingGoal}
+                onOpenSampleChapter={handleOpenSampleChapter}
+                isLoggedIn={isLoggedIn}
+                onOpenLoginModal={() => setIsLoginModalOpen(true)}
+              />
+            }
+          />
+          <Route path="/app" element={<Navigate to="/" replace />} />
+          <Route path="/home" element={<Navigate to="/" replace />} />
+
+          {/* Dedicated Author Showcase Portfolio */}
+          <Route
+            path="/portfolio"
             element={
               <PortfolioView
                 author={authorProfile}
@@ -182,15 +217,55 @@ export function App() {
                 upcomingBooks={upcomingBooks}
                 onOpenSampleChapter={handleOpenSampleChapter}
                 searchQuery={searchQuery}
-                onNavigateToStorizine={() => navigate('/storizine')}
+                onNavigateToStorizine={() => navigate('/magazine')}
               />
             }
           />
-          <Route path="/home" element={<Navigate to="/" replace />} />
 
-          {/* Storizine Page */}
+          {/* 2. Read / BookForest Section */}
           <Route
-            path="/storizine"
+            path="/read/*"
+            element={
+              <BookForestView
+                entries={bookForestEntries}
+                readingGoal={readingGoal}
+                onOpenAddModal={() => {
+                  setEditingBookForestEntry(null);
+                  setIsAddBookForestModalOpen(true);
+                }}
+                onEditEntry={handleEditBookForestEntry}
+                onDeleteEntry={handleDeleteBookForestEntry}
+                onSaveEntry={handleSaveBookForestEntry}
+                onOpenAICompanion={() => setIsAICompanionOpen(true)}
+                onOpenGutenbergModal={() => setIsGutenbergModalOpen(true)}
+                onOpenFableLounge={() => setIsFableLoungeOpen(true)}
+                onOpenOpenLibraryModal={() => setIsOpenLibraryModalOpen(true)}
+                onOpenStoryGraphModal={() => setIsStoryGraphModalOpen(true)}
+                onOpenReader={handleOpenSampleChapter}
+                searchQuery={searchQuery}
+                isLoggedIn={isLoggedIn}
+                onOpenLoginModal={() => setIsLoginModalOpen(true)}
+              />
+            }
+          />
+          <Route path="/bookforest/*" element={<Navigate to="/read" replace />} />
+          <Route path="/bookforest" element={<Navigate to="/read" replace />} />
+
+          {/* 3. Write / Writing Studio Section */}
+          <Route
+            path="/write/*"
+            element={<WritingStudioView onOpenSampleChapter={handleOpenSampleChapter} />}
+          />
+
+          {/* 4. Learn / Writing Academy Section */}
+          <Route
+            path="/learn/*"
+            element={<WritingAcademyView />}
+          />
+
+          {/* 5. Magazine / Literary Desk Section (Storizine) */}
+          <Route
+            path="/magazine/*"
             element={
               <StorizineView
                 searchQuery={searchQuery}
@@ -206,98 +281,52 @@ export function App() {
               />
             }
           />
-
-          {/* BookForest Page */}
           <Route
-            path="/bookforest"
-            element={
-              isLoggedIn ? (
-                <BookForestView
-                  entries={bookForestEntries}
-                  readingGoal={readingGoal}
-                  onOpenAddModal={() => {
-                    setEditingBookForestEntry(null);
-                    setIsAddBookForestModalOpen(true);
-                  }}
-                  onEditEntry={handleEditBookForestEntry}
-                  onDeleteEntry={handleDeleteBookForestEntry}
-                  onSaveEntry={handleSaveBookForestEntry}
-                  onOpenAICompanion={() => setIsAICompanionOpen(true)}
-                  onOpenGutenbergModal={() => setIsGutenbergModalOpen(true)}
-                  onOpenFableLounge={() => setIsFableLoungeOpen(true)}
-                  onOpenOpenLibraryModal={() => setIsOpenLibraryModalOpen(true)}
-                  onOpenStoryGraphModal={() => setIsStoryGraphModalOpen(true)}
-                  onOpenReader={handleOpenSampleChapter}
-                  searchQuery={searchQuery}
-                  isLoggedIn={isLoggedIn}
-                  onOpenLoginModal={() => setIsLoginModalOpen(true)}
-                />
-              ) : (
-                <div className="bg-[#fbf9ee] dark:bg-[#221f1c] p-12 rounded-3xl border border-[#ebd9c5] dark:border-[#38332c] text-center max-w-lg mx-auto my-12 space-y-4 shadow-xl">
-                  <div className="w-12 h-12 rounded-2xl bg-[#d4a373]/20 border border-[#d4a373]/40 flex items-center justify-center text-[#d4a373] mx-auto">
-                    <Lock className="w-6 h-6 text-[#d4a373]" />
-                  </div>
-                  <h2 className="text-2xl font-serif text-[#2a2724] dark:text-[#f5f2e6]">Authentication Required</h2>
-                  <p className="text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70 leading-relaxed">
-                    The BookForest library, shelves, reading goals, quotes studio, and collection features are strictly accessible after logging in. Please sign in to access your personal shelf.
-                  </p>
-                  <button
-                    onClick={() => setIsLoginModalOpen(true)}
-                    className="px-6 py-2.5 rounded-xl font-bold bg-[#d4a373] hover:bg-[#c39262] text-[#fffef2] text-xs shadow-md transition-all cursor-pointer"
-                  >
-                    Sign In to Access BookForest
-                  </button>
-                </div>
-              )
-            }
+            path="/storizine/*"
+            element={<Navigate to="/magazine" replace />}
+          />
+          <Route
+            path="/storizine"
+            element={<Navigate to="/magazine" replace />}
           />
 
-          {/* Author Account Portal Page */}
+          {/* 6. Publish / Publishing Center Section */}
+          <Route
+            path="/publish/*"
+            element={<PublishingCenterView />}
+          />
+
+          {/* 7. My Space / Profile & Settings Section */}
+          <Route
+            path="/me/*"
+            element={
+              <MySpaceView
+                author={authorProfile}
+                onUpdateAuthor={setAuthorProfile}
+                publishedBooks={publishedBooks}
+                upcomingBooks={upcomingBooks}
+                bookForestEntries={bookForestEntries}
+                readingGoal={readingGoal}
+                onUpdateReadingGoal={setReadingGoal}
+                isLoggedIn={isLoggedIn}
+                onOpenLoginModal={() => setIsLoginModalOpen(true)}
+              />
+            }
+          />
           <Route
             path="/account/*"
             element={
-              isLoggedIn ? (
-                <WriterDashboardView
-                  author={authorProfile}
-                  onUpdateAuthor={setAuthorProfile}
-                  publishedBooks={publishedBooks}
-                  onUpdatePublishedBooks={setPublishedBooks}
-                  upcomingBooks={upcomingBooks}
-                  onUpdateUpcomingBooks={setUpcomingBooks}
-                  bookForestEntries={bookForestEntries}
-                  readingGoal={readingGoal}
-                  onUpdateReadingGoal={setReadingGoal}
-                  onEditBookForestEntry={handleEditBookForestEntry}
-                  onDeleteBookForestEntry={handleDeleteBookForestEntry}
-                  onSaveBookForestEntry={handleSaveBookForestEntry}
-                  onOpenAddPortfolioModal={() => setIsAddPortfolioModalOpen(true)}
-                  onOpenAddBookForestModal={() => {
-                    setEditingBookForestEntry(null);
-                    setIsAddBookForestModalOpen(true);
-                  }}
-                  onOpenGutenbergModal={() => setIsGutenbergModalOpen(true)}
-                  onOpenOpenLibraryModal={() => setIsOpenLibraryModalOpen(true)}
-                  onOpenStoryGraphModal={() => setIsStoryGraphModalOpen(true)}
-                  onOpenFableLounge={() => setIsFableLoungeOpen(true)}
-                  onOpenAICompanion={() => setIsAICompanionOpen(true)}
-                />
-              ) : (
-                <div className="bg-[#fbf9ee] dark:bg-[#221f1c] p-12 rounded-3xl border border-[#ebd9c5] dark:border-[#38332c] text-center max-w-lg mx-auto my-12 space-y-4 shadow-xl">
-                  <div className="w-12 h-12 rounded-2xl bg-[#d4a373]/20 border border-[#d4a373]/40 flex items-center justify-center text-[#d4a373] mx-auto">
-                    <Lock className="w-6 h-6 text-[#d4a373]" />
-                  </div>
-                  <h2 className="text-2xl font-serif text-[#2a2724] dark:text-[#f5f2e6]">Account Portal Authentication Required</h2>
-                  <p className="text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70 leading-relaxed">
-                    The Account Portal is restricted to the author. Please sign in with your passcode to modify author bio, manage bibliography, update works-in-progress, and edit BookForest catalog entries.
-                  </p>
-                  <button
-                    onClick={() => setIsLoginModalOpen(true)}
-                    className="px-6 py-2.5 rounded-xl font-bold bg-[#d4a373] hover:bg-[#c39262] text-[#fffef2] text-xs shadow-md transition-all cursor-pointer"
-                  >
-                    Sign In to Account Portal
-                  </button>
-                </div>
-              )
+              <MySpaceView
+                author={authorProfile}
+                onUpdateAuthor={setAuthorProfile}
+                publishedBooks={publishedBooks}
+                upcomingBooks={upcomingBooks}
+                bookForestEntries={bookForestEntries}
+                readingGoal={readingGoal}
+                onUpdateReadingGoal={setReadingGoal}
+                isLoggedIn={isLoggedIn}
+                onOpenLoginModal={() => setIsLoginModalOpen(true)}
+              />
             }
           />
           <Route path="/dashboard/*" element={<Navigate to="/account" replace />} />

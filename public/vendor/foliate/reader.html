@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Foliate Core Reader Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Fira+Code&family=Inter:wght@400;500;600&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=OpenDyslexic&display=swap" rel="stylesheet">
+  <script src="/vendor/foliate/jszip.min.js"></script>
+  <script type="module" src="/vendor/foliate/view.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: transparent;
+    }
+    foliate-view {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <foliate-view id="foliate-root"></foliate-view>
+  <script type="module">
+    import { FoliateView } from '/vendor/foliate/view.js';
+    import { FoliateEPUB } from '/vendor/foliate/epub.js';
+
+    window.foliateView = document.getElementById('foliate-root');
+
+    // PostMessage communication bridge for iframe host
+    window.addEventListener('message', async (event) => {
+      const { type, payload } = event.data || {};
+      if (!type || !window.foliateView) return;
+
+      switch (type) {
+        case 'OPEN_TEXT':
+          window.foliateView.open(payload.text, 'text');
+          break;
+        case 'OPEN_EPUB':
+          try {
+            const epub = await FoliateEPUB.load(payload.buffer);
+            window.foliateView.open(epub, 'epub');
+          } catch (e) {
+            console.error('Failed to load EPUB in reader iframe', e);
+          }
+          break;
+        case 'SET_THEME':
+          window.foliateView.setTheme(payload);
+          break;
+        case 'SET_FLOW':
+          window.foliateView.setFlow(payload);
+          break;
+        case 'NEXT':
+          window.foliateView.next();
+          break;
+        case 'PREV':
+          window.foliateView.prev();
+          break;
+        case 'GO_TO':
+          window.foliateView.goTo(payload);
+          break;
+      }
+    });
+
+    window.foliateView.addEventListener('relocate', (e) => {
+      window.parent.postMessage({ type: 'FOLIATE_RELOCATE', detail: e.detail }, '*');
+    });
+
+    window.foliateView.addEventListener('select', (e) => {
+      window.parent.postMessage({ type: 'FOLIATE_SELECT', detail: e.detail }, '*');
+    });
+
+    window.foliateView.addEventListener('load', (e) => {
+      window.parent.postMessage({ type: 'FOLIATE_LOADED', detail: e.detail }, '*');
+    });
+  </script>
+</body>
+</html>

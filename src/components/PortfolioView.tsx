@@ -41,6 +41,15 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
       
       {/* Author Showcase Hero Banner */}
       <section className="relative rounded-3xl overflow-hidden bg-[#2a2724] dark:bg-[#1f1d1a] text-[#f5f2e6] p-8 sm:p-12 shadow-xl border border-[#d4a373]/30">
+        {/* Subtle Ambient Fantasy Backdrop */}
+        {author.bannerUrl && (
+          <div 
+            className="absolute inset-0 bg-cover bg-center opacity-25 mix-blend-luminosity filter blur-[1px] pointer-events-none"
+            style={{ backgroundImage: `url(${author.bannerUrl})` }}
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#2a2724] via-[#2a2724]/90 to-[#2a2724]/75 pointer-events-none" />
+
         <div className="relative z-10 max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-8">
           
           {/* Author Portrait */}

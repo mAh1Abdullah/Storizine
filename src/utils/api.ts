@@ -213,6 +213,42 @@ export const api = {
   },
 
   // 6. Gemini Literary Passage Analysis & Subtext Explainer (Phase 3)
+  async explain(params: {
+    selectedText?: string;
+    text?: string;
+    term?: string;
+    contextSentence?: string;
+    targetLang?: string;
+    bookTitle?: string;
+    author?: string;
+    mode?: 'all' | 'subtext' | 'themes' | 'translate';
+  }): Promise<{
+    selectedText: string;
+    term?: string;
+    definition?: string;
+    culturalContext?: string;
+    historicalContext?: string;
+    subtext: string;
+    literaryThemes: string[];
+    stylisticDevices: string[];
+    translation?: string;
+    bengaliTranslation: string;
+    historicalOrAtmosphericVibe: string;
+  }> {
+    const res = await fetch('/api/ai/explain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Explainer failed: ${res.statusText}`);
+    }
+
+    const json = await res.json();
+    return json.data;
+  },
+
   async explainPassage(params: {
     text: string;
     bookTitle?: string;
@@ -226,17 +262,6 @@ export const api = {
     bengaliTranslation: string;
     historicalOrAtmosphericVibe: string;
   }> {
-    const res = await fetch('/api/ai/explain', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
-    });
-
-    if (!res.ok) {
-      throw new Error(`Passage explainer failed: ${res.statusText}`);
-    }
-
-    const json = await res.json();
-    return json.data;
+    return this.explain(params);
   },
 };

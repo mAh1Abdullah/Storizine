@@ -5,7 +5,8 @@ export const STORIZINE_AUTHOR: AuthorProfile = {
   penName: 'mAh Abdullah',
   title: 'Fantasy, Science Fiction & Adventure Novelist',
   bio: 'mAh Abdullah can mostly be found reading or writing something—more likely a Fantasy, Science Fiction, or Adventure story. Writing a novel was always on his bucket list, and with "Sherif", it became a reality. He went on to author four other novels in the Brave Boys Series, followed by "The Virus <evo>", his first science fiction novel. When not absorbed in the latest gripping page-turner, he enjoys reading novels in different languages, coding, and writing. He lives in Sylhet, Bangladesh, with his family.',
-  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+  avatarUrl: '/assets/aistudio/Dreamy_Fantasy_Author_Bio_Landscape_df6b090c.png',
+  bannerUrl: '/assets/aistudio/Dreamy_Fantasy_Author_Bio_Landscape_df6b090c.png',
   socialLinks: [
     { platform: 'Wattpad', url: 'https://www.wattpad.com' },
     { platform: 'Webnovel', url: 'https://www.webnovel.com' },
