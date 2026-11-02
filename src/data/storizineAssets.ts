@@ -114,6 +114,47 @@ export const STORIZINE_ASSETS = {
     description: 'Daylight panorama of mountains and enchanted books under azure skies.',
     suggestedUsage: 'reader',
   } as StorizineVisualAsset,
+
+  // Storizine Official Magazine Issue Covers
+  storizineIssue0: {
+    id: 'storizine-issue-0',
+    title: 'Storizine — Issue #0 (Genesis)',
+    subtitle: 'A Magazine of Stories',
+    path: '/assets/aistudio/Storizine_0_56083668.png',
+    aspectRatio: '1:1',
+    description: 'Official inaugural cover featuring illuminated open tome and golden skies.',
+    suggestedUsage: 'reader',
+  } as StorizineVisualAsset,
+
+  storizineIssue00: {
+    id: 'storizine-issue-00',
+    title: 'Storizine — Collector Edition #00',
+    subtitle: 'Deluxe Magazine Collection',
+    path: '/assets/aistudio/Storizine_00_550588da.png',
+    aspectRatio: '1:1',
+    description: 'Deluxe midnight library edition with quill and celestial spires.',
+    suggestedUsage: 'reader',
+  } as StorizineVisualAsset,
+
+  storizineIssue1: {
+    id: 'storizine-issue-1',
+    title: 'Storizine — Volume 1: Celestial Spires',
+    subtitle: 'A Magazine of Stories',
+    path: '/assets/aistudio/Storizine_1_277318a7.png',
+    aspectRatio: '1:1',
+    description: 'Sky citadels, glowing quill, and waterfalls flowing through floating mountains.',
+    suggestedUsage: 'reader',
+  } as StorizineVisualAsset,
+
+  storizineIssue2: {
+    id: 'storizine-issue-2',
+    title: 'Storizine — Volume 2: The Grand Archive',
+    subtitle: 'A Magazine of Stories',
+    path: '/assets/aistudio/Storizine_2_615557b6.png',
+    aspectRatio: '1:1',
+    description: 'Grand archival cathedral library bathed in ethereal morning sunlight.',
+    suggestedUsage: 'reader',
+  } as StorizineVisualAsset,
 };
 
 export const STORIZINE_BLUEPRINT_DOCS = {

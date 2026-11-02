@@ -19,6 +19,7 @@ export interface PublishedBook {
   series?: string;
   seriesNumber?: number;
   coverUrl: string;
+  alternateCovers?: string[];
   genre: string;
   releaseDate: string;
   publisher: string;
@@ -41,6 +42,7 @@ export interface UpcomingBook {
   title: string;
   series?: string;
   coverUrl: string;
+  alternateCovers?: string[];
   genre: string;
   expectedRelease: string;
   writingStage: WritingStage;
@@ -74,6 +76,7 @@ export interface BookForestEntry {
   title: string;
   author: string;
   coverUrl: string;
+  alternateCovers?: string[];
   genre: string;
   readingStatus: ReadingStatus;
   userRating: number; // 0 to 5
@@ -182,6 +185,7 @@ export interface StorizineWork {
   subcategory?: string;
   series?: string;
   coverUrl: string;
+  alternateCovers?: string[];
   language: string;
   blurbEnglish?: string;
   blurbBengali?: string;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Feather,
   Plus,
@@ -25,6 +25,7 @@ import {
   INITIAL_WRITING_TEMPLATES
 } from '../../data/writingStudioData';
 import { STORIZINE_ASSETS } from '../../data/storizineAssets';
+import { api } from '../../utils/api';
 
 type StudioTab = 'projects' | 'composer' | 'editor' | 'prompts' | 'sessions' | 'templates';
 
@@ -36,6 +37,35 @@ export const WritingStudioView: React.FC<WritingStudioViewProps> = () => {
   const [activeTab, setActiveTab] = useState<StudioTab>('projects');
   const [projects, setProjects] = useState<WritingProject[]>(INITIAL_WRITING_PROJECTS);
   const [selectedProjectId, setSelectedProjectId] = useState<string>(INITIAL_WRITING_PROJECTS[0].id);
+
+  // Sync projects from database
+  useEffect(() => {
+    if (api.getToken()) {
+      api.getWritingProjects().then((dbProjects) => {
+        if (dbProjects && dbProjects.length > 0) {
+          const formatted: WritingProject[] = dbProjects.map((p: any) => ({
+            id: p.id,
+            title: p.title,
+            format: p.format || 'novel',
+            language: p.language || 'English',
+            genre: p.genre || 'Speculative Fiction',
+            premise: p.premise || '',
+            workflow: p.workflow || 'hybrid',
+            status: p.status || 'drafting',
+            wordCount: p.wordCount || 0,
+            targetWordCount: p.targetWordCount || 80000,
+            lastEdited: 'Synced from Database',
+            charactersCount: 3,
+            scenesCount: 5,
+            currentDraft: `# ${p.title}\n\nChapter 1\n\nThe stars were silent...`,
+          }));
+          setProjects([...formatted, ...INITIAL_WRITING_PROJECTS.filter(ip => !formatted.some(fp => fp.id === ip.id))]);
+        }
+      }).catch((err) => {
+        console.warn('Could not sync writing projects from backend:', err);
+      });
+    }
+  }, []);
 
   // Active project selection
   const selectedProject = projects.find(p => p.id === selectedProjectId) || projects[0];
@@ -87,12 +117,28 @@ export const WritingStudioView: React.FC<WritingStudioViewProps> = () => {
     showToast(`Draft saved successfully (${wordCount} words)`);
   };
 
-  const handleCreateProjectSubmit = (e: React.FormEvent) => {
+  const handleCreateProjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProjectForm.title.trim()) return;
 
+    let serverId: string | null = null;
+    if (api.getToken()) {
+      try {
+        const res = await api.createWritingProject({
+          title: newProjectForm.title.trim(),
+          format: newProjectForm.format,
+          genre: newProjectForm.genre || 'Speculative Fiction',
+          premise: newProjectForm.premise || 'An unwritten voyage awaits.',
+          targetWordCount: Number(newProjectForm.targetWordCount) || 80000,
+        });
+        if (res && res.id) serverId = res.id;
+      } catch (err) {
+        console.warn('Saving project locally:', err);
+      }
+    }
+
     const newProj: WritingProject = {
-      id: `proj-${Date.now()}`,
+      id: serverId || `proj-${Date.now()}`,
       title: newProjectForm.title.trim(),
       format: newProjectForm.format,
       language: 'English',
@@ -173,7 +219,7 @@ export const WritingStudioView: React.FC<WritingStudioViewProps> = () => {
       </div>
 
       {/* Section Sub-Navigation Tabs (Zero-Pill: clean underline/tile) */}
-      <div className="flex items-center gap-2 sm:gap-4 border-b border-[#ebd9c5] dark:border-[#38332c] pb-2 overflow-x-auto text-xs font-bold">
+      <div className="flex items-center gap-2 sm:gap-4 border-b border-[#ebd9c5] dark:border-[#38332c] pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar scroll-smooth text-xs font-bold">
         {[
           { key: 'projects', label: 'Projects & Outlines', icon: Layers },
           { key: 'composer', label: 'Story Composer', icon: Compass },
@@ -188,7 +234,7 @@ export const WritingStudioView: React.FC<WritingStudioViewProps> = () => {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as StudioTab)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl transition-all whitespace-nowrap cursor-pointer min-h-[42px] ${
                 isActive
                   ? 'bg-[#2a2724] dark:bg-[#25221e] text-[#d4a373] border border-[#d4a373]/30 shadow-xs'
                   : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'

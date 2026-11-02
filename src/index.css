@@ -47,6 +47,15 @@ body {
   background: #bc8a5f;
 }
 
+/* Hide scrollbar for smooth mobile horizontal scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Print Styles for PDF Generation */
 @media print {
   body {

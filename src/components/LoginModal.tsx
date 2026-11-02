@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Feather, Lock, KeyRound, CheckCircle2, X, ShieldCheck } from 'lucide-react';
+import { api } from '../utils/api';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -18,26 +19,40 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!passcode.trim()) {
+      setErrorMsg('Please enter your writer passcode or password.');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMsg('');
 
-    setTimeout(() => {
-      // Demo authentication: allow any passcode or default "writer" / "1234"
-      if (passcode.trim() === '' || passcode.length >= 0) {
-        onLoginSuccess();
-        onClose();
-      } else {
-        setErrorMsg('Invalid passcode. Please try again.');
-      }
+    try {
+      await api.login({ passcode });
+      onLoginSuccess();
+      onClose();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Invalid credentials. Please verify your passcode.');
+    } finally {
       setIsSubmitting(false);
-    }, 400);
+    }
   };
 
-  const handleQuickDemoLogin = () => {
-    onLoginSuccess();
-    onClose();
+  const handleQuickDemoLogin = async () => {
+    setIsSubmitting(true);
+    setErrorMsg('');
+
+    try {
+      await api.login({ passcode: 'writer1234' });
+      onLoginSuccess();
+      onClose();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Author login failed.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -72,7 +87,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 type="password"
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
-                placeholder="Enter writer access passcode..."
+                placeholder="Enter writer passcode (e.g. writer1234)..."
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fbf9ee] dark:bg-[#181614] text-[#2a2724] dark:text-[#f5f2e6] outline-none text-xs"
               />
             </div>
@@ -99,7 +114,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               className="w-full py-2 rounded-xl font-bold bg-[#2a2724] hover:bg-[#3d3834] text-[#d4a373] border border-[#d4a373]/40 transition-all flex items-center justify-center space-x-1.5 text-xs"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-[#d4a373]" />
-              <span>Quick Demo Sign-In as Evelyn Vance</span>
+              <span>Quick Sign-In as Author (mAh Abdullah)</span>
             </button>
           </div>
         </form>

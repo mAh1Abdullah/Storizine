@@ -17,7 +17,7 @@ export const PWAInstallButton: React.FC<{ className?: string }> = ({ className =
       <button
         onClick={install}
         className={`flex items-center gap-1.5 rounded-xl bg-[#d4a373] hover:bg-[#c39262] px-3 py-1.5 text-xs font-bold text-[#181614] shadow-xs transition ${className}`}
-        title="Install Storizine as a PWA app"
+        title="Install STORIZINE as a PWA app"
       >
         <Download className="w-3.5 h-3.5" />
         <span>Install App</span>
@@ -32,7 +32,7 @@ export const PWAInstallButton: React.FC<{ className?: string }> = ({ className =
         <button
           onClick={() => setShowIOSGuide(true)}
           className={`flex items-center gap-1.5 rounded-xl border border-[#ebd9c5] dark:border-[#38332c] bg-[#fffef2] dark:bg-[#181614] px-3 py-1.5 text-xs font-bold text-[#2a2724] dark:text-[#f5f2e6] hover:bg-[#f5f1e3] transition ${className}`}
-          title="Install Storizine on iPhone / iPad"
+          title="Install STORIZINE on iPhone / iPad"
         >
           <Smartphone className="w-3.5 h-3.5 text-[#d4a373]" />
           <span>Install on iOS</span>
@@ -55,7 +55,7 @@ export const PWAInstallButton: React.FC<{ className?: string }> = ({ className =
               <p className="mt-3 text-xs text-[#2a2724]/80 dark:text-[#f5f2e6]/80 leading-relaxed">
                 1. Tap the <strong>Share</strong> button (box with arrow pointing up) in Safari&apos;s bottom toolbar.<br />
                 2. Scroll down and tap <strong>Add to Home Screen</strong>.<br />
-                3. Open Storizine directly from your home screen for full offline reading!
+                3. Open STORIZINE directly from your home screen for full offline reading!
               </p>
               <button
                 onClick={() => setShowIOSGuide(false)}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   User,
   Award,
@@ -19,6 +19,7 @@ import {
 import { AuthorProfile, PublishedBook, UpcomingBook, BookForestEntry, ReadingGoal } from '../../types';
 import { exportBookForestJSON, exportBookForestCSV } from '../../utils/exportUtils';
 import { STORIZINE_ASSETS } from '../../data/storizineAssets';
+import { api } from '../../utils/api';
 
 type MySpaceTab = 'profile' | 'portfolio' | 'goals' | 'journal' | 'saved' | 'settings' | 'privacy' | 'export';
 
@@ -76,6 +77,24 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
   const [newJournalTitle, setNewJournalTitle] = useState('');
   const [newJournalText, setNewJournalText] = useState('');
 
+  // Fetch journal entries from backend database
+  useEffect(() => {
+    if (isLoggedIn && api.getToken()) {
+      api.getJournalEntries().then((entries) => {
+        if (entries && entries.length > 0) {
+          const mapped = entries.map((e: any) => ({
+            id: e.id,
+            date: e.createdAt ? e.createdAt.split('T')[0] : 'Today',
+            title: e.title,
+            text: e.content,
+            linkedBook: e.linkedBookTitle || undefined,
+          }));
+          setJournalEntries((prev) => [...mapped, ...prev.filter((p) => !mapped.some((m) => m.id === p.id))]);
+        }
+      }).catch((err) => console.warn('Could not sync journal entries:', err));
+    }
+  }, [isLoggedIn]);
+
   // Privacy settings
   const [privacySettings, setPrivacySettings] = useState({
     profilePublic: true,
@@ -95,11 +114,25 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
     showToast('Profile updated successfully!');
   };
 
-  const handleAddJournalEntry = (e: React.FormEvent) => {
+  const handleAddJournalEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newJournalTitle.trim() || !newJournalText.trim()) return;
+
+    let serverId: string | null = null;
+    if (isLoggedIn && api.getToken()) {
+      try {
+        const res = await api.createJournalEntry({
+          title: newJournalTitle.trim(),
+          content: newJournalText.trim(),
+        });
+        if (res && res.id) serverId = res.id;
+      } catch (err) {
+        console.warn('Saving journal locally:', err);
+      }
+    }
+
     const entry = {
-      id: `j-${Date.now()}`,
+      id: serverId || `j-${Date.now()}`,
       date: new Date().toISOString().split('T')[0],
       title: newJournalTitle.trim(),
       text: newJournalText.trim(),
@@ -107,7 +140,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
     setJournalEntries([entry, ...journalEntries]);
     setNewJournalTitle('');
     setNewJournalText('');
-    showToast('Saved private journal entry.');
+    showToast('Saved private journal entry to database.');
   };
 
   if (!isLoggedIn) {
@@ -185,7 +218,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
       </div>
 
       {/* Sub-Tabs (Zero-Pill: quiet tile) */}
-      <div className="flex items-center gap-2 sm:gap-4 border-b border-[#ebd9c5] dark:border-[#38332c] pb-2 overflow-x-auto text-xs font-bold">
+      <div className="flex items-center gap-2 sm:gap-4 border-b border-[#ebd9c5] dark:border-[#38332c] pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar scroll-smooth text-xs font-bold">
         {[
           { key: 'profile', label: 'Author Profile', icon: User },
           { key: 'portfolio', label: 'Published Portfolio', icon: Award },
@@ -202,7 +235,7 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as MySpaceTab)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl transition-all whitespace-nowrap cursor-pointer min-h-[42px] ${
                 isActive
                   ? 'bg-[#2a2724] dark:bg-[#25221e] text-[#d4a373] border border-[#d4a373]/30 shadow-xs'
                   : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
@@ -496,7 +529,29 @@ export const MySpaceView: React.FC<MySpaceViewProps> = ({
             You own your manuscripts, reading data, and journal notes. Export standard JSON or CSV files at any time with a single click.
           </p>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-wrap gap-3 pt-2">
+            <button
+              onClick={async () => {
+                try {
+                  const data = await api.exportUserData();
+                  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `storizine_workspace_archive_${new Date().toISOString().split('T')[0]}.json`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  showToast('Exported complete authenticated account archive (JSON)');
+                } catch (err: any) {
+                  showToast(err.message || 'Export failed. Please ensure you are signed in.');
+                }
+              }}
+              className="px-4 py-2.5 rounded-xl bg-[#d4a373] text-[#fffef2] font-bold text-xs shadow-md hover:bg-[#c39262] flex items-center gap-2 cursor-pointer transition-all"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export Full Account Archive (JSON)</span>
+            </button>
+
             <button
               onClick={() => {
                 exportBookForestJSON(bookForestEntries);

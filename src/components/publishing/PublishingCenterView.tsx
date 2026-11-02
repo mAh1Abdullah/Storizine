@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Send,
   Search,
@@ -22,6 +22,7 @@ import {
   AUTHOR_SAFETY_RULES
 } from '../../data/publishingCenterData';
 import { STORIZINE_ASSETS } from '../../data/storizineAssets';
+import { api } from '../../utils/api';
 
 type PublishTab = 'dashboard' | 'opportunities' | 'query' | 'submissions' | 'rights' | 'safety';
 
@@ -31,6 +32,23 @@ export const PublishingCenterView: React.FC = () => {
   const [submissions, setSubmissions] = useState<SubmissionTrack[]>(INITIAL_SUBMISSION_TRACKS);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('All');
+
+  // Sync opportunities and submission tracks from backend
+  useEffect(() => {
+    api.getOpportunities().then((dbOpps) => {
+      if (dbOpps && dbOpps.length > 0) {
+        setOpportunities(dbOpps);
+      }
+    }).catch((err) => console.warn('Could not load opportunities:', err));
+
+    if (api.getToken()) {
+      api.getPublishingTracks().then((tracks) => {
+        if (tracks && tracks.length > 0) {
+          setSubmissions(tracks);
+        }
+      }).catch((err) => console.warn('Could not load submission tracks:', err));
+    }
+  }, []);
 
   // Query Studio state
   const [queryForm, setQueryForm] = useState({
@@ -59,9 +77,27 @@ export const PublishingCenterView: React.FC = () => {
     return matchesSearch && matchesType;
   });
 
-  const handleTrackOpportunity = (opp: PublishingOpportunity) => {
+  const handleTrackOpportunity = async (opp: PublishingOpportunity) => {
+    let serverId: string | null = null;
+    if (api.getToken()) {
+      try {
+        const res = await api.addPublishingTrack({
+          opportunityTitle: opp.title,
+          recipient: opp.organizer,
+          projectTitle: 'The Chronicles of Saptarshi',
+          dateSent: new Date().toISOString().split('T')[0],
+          status: 'Preparing',
+          followUpDate: opp.deadline,
+          notes: `Targeting deadline: ${opp.deadline}. Rate: ${opp.compensation}`,
+        });
+        if (res && res.id) serverId = res.id;
+      } catch (err) {
+        console.warn('Saving track locally:', err);
+      }
+    }
+
     const newTrack: SubmissionTrack = {
-      id: `track-${Date.now()}`,
+      id: serverId || `track-${Date.now()}`,
       opportunityTitle: opp.title,
       recipient: opp.organizer,
       projectTitle: 'The Chronicles of Saptarshi',
@@ -112,7 +148,7 @@ export const PublishingCenterView: React.FC = () => {
       </div>
 
       {/* Sub-Tabs (Zero-Pill: quiet tile) */}
-      <div className="flex items-center gap-2 sm:gap-4 border-b border-[#ebd9c5] dark:border-[#38332c] pb-2 overflow-x-auto text-xs font-bold">
+      <div className="flex items-center gap-2 sm:gap-4 border-b border-[#ebd9c5] dark:border-[#38332c] pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar scroll-smooth text-xs font-bold">
         {[
           { key: 'dashboard', label: 'Readiness & Overview', icon: Layers },
           { key: 'opportunities', label: 'Calls & Directory', icon: Search },
@@ -127,7 +163,7 @@ export const PublishingCenterView: React.FC = () => {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as PublishTab)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl transition-all whitespace-nowrap cursor-pointer min-h-[42px] ${
                 isActive
                   ? 'bg-[#2a2724] dark:bg-[#25221e] text-[#d4a373] border border-[#d4a373]/30 shadow-xs'
                   : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
@@ -445,7 +481,43 @@ export const PublishingCenterView: React.FC = () => {
             </button>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-[#ebd9c5] dark:border-[#38332c]">
+          {/* Mobile Card Layout */}
+          <div className="md:hidden space-y-3">
+            {submissions.map((sub) => (
+              <div
+                key={sub.id}
+                className="p-4 rounded-2xl bg-[#fffef2] dark:bg-[#1a1715] border border-[#ebd9c5] dark:border-[#38332c] shadow-xs space-y-2.5"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h4 className="font-serif font-bold text-sm text-[#2a2724] dark:text-[#f5f2e6]">
+                      {sub.opportunityTitle}
+                    </h4>
+                    <p className="text-[11px] text-[#2a2724]/60 dark:text-[#f5f2e6]/60">
+                      {sub.recipient}
+                    </p>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#d4a373]/20 text-[#b07843] dark:text-[#d4a373] shrink-0">
+                    {sub.status}
+                  </span>
+                </div>
+
+                <div className="text-xs text-[#2a2724]/80 dark:text-[#f5f2e6]/80 flex items-center justify-between pt-1 border-t border-[#ebd9c5]/40 dark:border-[#38332c]/40">
+                  <span><strong>Project:</strong> {sub.projectTitle}</span>
+                  <span className="font-mono text-[10px] text-[#2a2724]/50 dark:text-[#f5f2e6]/50">{sub.dateSent}</span>
+                </div>
+
+                {sub.notes && (
+                  <p className="text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70 italic bg-[#f5f1e3]/50 dark:bg-[#25221e]/50 p-2.5 rounded-xl">
+                    "{sub.notes}"
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto rounded-2xl border border-[#ebd9c5] dark:border-[#38332c]">
             <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-[#f5f1e3]/80 dark:bg-[#25221e]/80 border-b border-[#ebd9c5] dark:border-[#38332c] text-[#2a2724] dark:text-[#f5f2e6] font-serif">
                 <tr>

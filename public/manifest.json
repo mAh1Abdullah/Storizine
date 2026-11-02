@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Storizine Reader & BookForest",
-  "short_name": "Storizine",
-  "description": "An aesthetic literary reader with EPUB & PDF rendering, BookForest tracker, and offline PWA reading support.",
+  "name": "STORIZINE",
+  "short_name": "STORIZINE",
+  "description": "An aesthetic literary magazine, reader with EPUB & PDF rendering, library tracker, and offline PWA reading support.",
   "theme_color": "#d4a373",
   "background_color": "#181614",
   "display": "standalone",

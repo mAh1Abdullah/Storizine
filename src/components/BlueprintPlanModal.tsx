@@ -52,7 +52,7 @@ export const BlueprintPlanModal: React.FC<BlueprintPlanModalProps> = ({ isOpen, 
             <div>
               <div className="flex items-center space-x-2">
                 <h2 className="text-xl font-serif font-bold text-[#2a2724] dark:text-[#f5f2e6]">
-                  Storizine & BookForest Blueprints
+                  STORIZINE Blueprints
                 </h2>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#d4a373] text-[#fffef2]">
                   v3.0 Active Plan

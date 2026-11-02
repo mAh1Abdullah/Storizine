@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Award,
   BookOpen,
@@ -21,15 +21,26 @@ import {
   INITIAL_ACADEMY_EXERCISES
 } from '../../data/learningAcademyData';
 import { STORIZINE_ASSETS } from '../../data/storizineAssets';
+import { api } from '../../utils/api';
 
 type AcademyTab = 'catalog' | 'paths' | 'lesson' | 'exercises' | 'clinic';
 
 export const WritingAcademyView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AcademyTab>('catalog');
+  const [lessons, setLessons] = useState<AcademyLesson[]>(INITIAL_ACADEMY_LESSONS);
   const [selectedLessonId, setSelectedLessonId] = useState<string>(INITIAL_ACADEMY_LESSONS[0].id);
 
+  // Sync lessons from backend database
+  useEffect(() => {
+    api.getLessons().then((dbLessons) => {
+      if (dbLessons && dbLessons.length > 0) {
+        setLessons(dbLessons);
+      }
+    }).catch((err) => console.warn('Could not load lessons from database:', err));
+  }, []);
+
   // Active lesson
-  const activeLesson = INITIAL_ACADEMY_LESSONS.find(l => l.id === selectedLessonId) || INITIAL_ACADEMY_LESSONS[0];
+  const activeLesson = lessons.find(l => l.id === selectedLessonId) || lessons[0];
 
   // Story Clinic states
   const [clinicExcerpt, setClinicExcerpt] = useState<string>(
@@ -57,46 +68,36 @@ export const WritingAcademyView: React.FC = () => {
     setActiveTab('lesson');
   };
 
-  const handleRunStoryClinic = () => {
-    // Generate craft diagnostic based on mode
-    if (clinicMode === 'sensory') {
-      setClinicFeedback({
-        strengths: ['Immediate action verb present', 'Clear subject focus'],
-        observations: [
-          'Visual descriptions ("red", "rock") are generic and lack tactile or olfactory texture',
-          'Action lacks physical resistance or consequences on the character’s posture',
-        ],
-        recommendations: [
-          'Replace "The sky was red" with sensory atmosphere: "The twilight had curdled into the raw bronze of heated copper"',
-          'Add visceral resonance to the arrival: "The downdraft crushed wild sage beneath talons, filling the gorge with the bitter scent of bruised herbs"',
-        ],
-      });
-    } else if (clinicMode === 'pacing') {
-      setClinicFeedback({
-        strengths: ['High-tempo sentence construction'],
-        observations: [
-          'All three sentences have identical cadence (Subject + Verb + Object)',
-          'No anticipation built before the confrontation',
-        ],
-        recommendations: [
-          'Vary sentence lengths to choreograph reader heartbeat',
-          'Insert an involuntary somatic beat before the character acts (e.g. breathless pause, hand trembling on the pommel)',
-        ],
-      });
-    } else {
-      setClinicFeedback({
-        strengths: ['Unambiguous narrative objective'],
-        observations: [
-          'Telling rather than showing emotional state ("yelled at it")',
-          'Lacks subtext or relationship context between human and beast',
-        ],
-        recommendations: [
-          'Ground the shout with specific linguistic weight or ancient command',
-          'Anchor the character’s positioning relative to the environment',
-        ],
-      });
+  const handleRunStoryClinic = async () => {
+    try {
+      const res = await api.runStoryClinic(clinicExcerpt, clinicMode);
+      if (res && res.feedback) {
+        setClinicFeedback(res.feedback);
+        showToast('Story Clinic diagnostic generated.');
+      }
+    } catch {
+      // Graceful fallback
+      if (clinicMode === 'sensory') {
+        setClinicFeedback({
+          strengths: ['Immediate action verb present', 'Clear subject focus'],
+          observations: [
+            'Visual descriptions are generic and lack tactile texture',
+            'Action lacks physical resistance or consequences on posture',
+          ],
+          recommendations: [
+            'Replace "The sky was red" with sensory atmosphere: "The twilight had curdled into the raw bronze of heated copper"',
+            'Add visceral resonance to the arrival: "The downdraft crushed wild sage beneath talons"',
+          ],
+        });
+      } else {
+        setClinicFeedback({
+          strengths: ['Unambiguous narrative objective'],
+          observations: ['Telling rather than showing emotional state'],
+          recommendations: ['Ground the shout with specific linguistic weight or ancient command'],
+        });
+      }
+      showToast('Story Clinic diagnostic generated.');
     }
-    showToast('Story Clinic diagnostic generated.');
   };
 
   return (
@@ -136,7 +137,7 @@ export const WritingAcademyView: React.FC = () => {
       </div>
 
       {/* Sub-Tabs Navigation (Zero-Pill: quiet tile) */}
-      <div className="flex items-center gap-2 sm:gap-4 border-b border-[#ebd9c5] dark:border-[#38332c] pb-2 overflow-x-auto text-xs font-bold">
+      <div className="flex items-center gap-2 sm:gap-4 border-b border-[#ebd9c5] dark:border-[#38332c] pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar scroll-smooth text-xs font-bold">
         {[
           { key: 'catalog', label: 'Craft Catalog', icon: BookOpen },
           { key: 'paths', label: 'Curated Paths', icon: Compass },
@@ -150,7 +151,7 @@ export const WritingAcademyView: React.FC = () => {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as AcademyTab)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl transition-all whitespace-nowrap cursor-pointer min-h-[42px] ${
                 isActive
                   ? 'bg-[#2a2724] dark:bg-[#25221e] text-[#d4a373] border border-[#d4a373]/30 shadow-xs'
                   : 'text-[#2a2724]/70 dark:text-[#f5f2e6]/70 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'

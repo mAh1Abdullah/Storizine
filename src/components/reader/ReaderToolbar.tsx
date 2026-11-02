@@ -195,7 +195,7 @@ export const ReaderToolbar: React.FC<ReaderToolbarProps> = ({
 
       {/* Floating Display Controls Overlay */}
       {showSettingsDrawer && (
-        <div className="absolute top-14 right-4 z-40 w-80 sm:w-96 rounded-2xl bg-[#fbf9ee] dark:bg-[#1a1714] border border-[#ebd9c5] dark:border-[#38332c] shadow-2xl p-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="fixed sm:absolute inset-x-3 sm:inset-x-auto top-14 sm:right-4 z-40 w-auto sm:w-96 max-h-[85vh] overflow-y-auto rounded-2xl bg-[#fbf9ee] dark:bg-[#1a1714] border border-[#ebd9c5] dark:border-[#38332c] shadow-2xl p-4 sm:p-5 space-y-4 sm:space-y-5 animate-in fade-in slide-in-from-top-2 duration-150">
           <div className="flex items-center justify-between border-b border-[#ebd9c5]/60 dark:border-[#2e2a25] pb-3">
             <div className="flex items-center space-x-2">
               <Type className="w-4 h-4 text-[#d4a373]" />

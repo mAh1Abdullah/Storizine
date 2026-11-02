@@ -60,6 +60,7 @@ export const StorizineView: React.FC<StorizineViewProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<StorizineCategory | 'All'>('All');
   const [localSearch, setLocalSearch] = useState('');
   const [selectedWork, setSelectedWork] = useState<StorizineWork | null>(null);
+  const [activeModalCover, setActiveModalCover] = useState<string | null>(null);
   const [isBlueprintModalOpen, setIsBlueprintModalOpen] = useState(false);
 
   // Editing state for published/upcoming book
@@ -378,6 +379,79 @@ export const StorizineView: React.FC<StorizineViewProps> = ({
         </div>
       </div>
 
+      {/* Official Storizine Magazine Editions / Issues Showcase */}
+      <div className="p-5 rounded-3xl bg-[#fbf9ee] dark:bg-[#1f1d1a] border border-[#ebd9c5] dark:border-[#38332c] space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#d4a373]/20 text-[#b07843] dark:text-[#d4a373] uppercase tracking-wider font-sans">
+              Archival Issue Showcase
+            </span>
+            <h3 className="font-serif text-lg font-bold text-[#2a2724] dark:text-[#f5f2e6]">
+              Storizine Official Literary Magazine Issues
+            </h3>
+          </div>
+          <p className="text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70">
+            Collector editions from the Storizine archive
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            {
+              issue: 'Issue #0',
+              subtitle: 'Genesis Edition',
+              img: STORIZINE_ASSETS.storizineIssue0.path,
+              tag: 'Inaugural',
+            },
+            {
+              issue: 'Edition #00',
+              subtitle: 'Collector Arc',
+              img: STORIZINE_ASSETS.storizineIssue00.path,
+              tag: 'Special',
+            },
+            {
+              issue: 'Volume 1',
+              subtitle: 'Celestial Spires',
+              img: STORIZINE_ASSETS.storizineIssue1.path,
+              tag: 'Vol. I',
+            },
+            {
+              issue: 'Volume 2',
+              subtitle: 'The Grand Archive',
+              img: STORIZINE_ASSETS.storizineIssue2.path,
+              tag: 'Vol. II',
+            },
+          ].map((item, idx) => (
+            <div
+              key={idx}
+              className="group relative rounded-2xl overflow-hidden border border-[#ebd9c5] dark:border-[#38332c] bg-[#181614] shadow-md hover:border-[#d4a373] transition-all"
+            >
+              <div className="aspect-[3/4] w-full overflow-hidden bg-[#181614]">
+                <img
+                  src={item.img}
+                  alt={item.issue}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#181614] via-transparent to-transparent" />
+                <div className="absolute top-2.5 left-2.5">
+                  <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-[#d4a373] text-[#181614]">
+                    {item.tag}
+                  </span>
+                </div>
+                <div className="absolute bottom-2.5 left-2.5 right-2.5 text-left">
+                  <span className="font-serif font-bold text-xs text-[#fffef2] block leading-tight">
+                    {item.issue}
+                  </span>
+                  <span className="text-[10px] text-[#ebd9c5]/80 block font-sans">
+                    {item.subtitle}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Multiple Section Category Navigation Bar */}
       <section className="space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#ebd9c5] dark:border-[#38332c] pb-4">
@@ -467,7 +541,10 @@ export const StorizineView: React.FC<StorizineViewProps> = ({
               return (
                 <div
                   key={work.id}
-                  onClick={() => setSelectedWork(work)}
+                  onClick={() => {
+                    setSelectedWork(work);
+                    setActiveModalCover(work.coverUrl);
+                  }}
                   className="group bg-[#fffef2] dark:bg-[#1f1d1a] border border-[#ebd9c5] dark:border-[#38332c] rounded-3xl overflow-hidden hover:shadow-2xl hover:border-[#d4a373]/60 transition-all cursor-pointer flex flex-col justify-between"
                 >
                   <div>
@@ -628,8 +705,43 @@ export const StorizineView: React.FC<StorizineViewProps> = ({
             </button>
 
             <div className="flex flex-col sm:flex-row gap-6">
-              <div className="w-full sm:w-44 h-64 bg-[#181614] rounded-2xl overflow-hidden shrink-0 shadow-lg border border-[#ebd9c5]/60">
-                <img src={selectedWork.coverUrl} alt={selectedWork.title} className="w-full h-full object-cover" />
+              <div className="w-full sm:w-48 shrink-0 space-y-2.5">
+                <div className="w-full h-64 bg-[#181614] rounded-2xl overflow-hidden shadow-lg border border-[#ebd9c5]/60">
+                  <img
+                    src={activeModalCover || selectedWork.coverUrl}
+                    alt={selectedWork.title}
+                    className="w-full h-full object-cover transition-all duration-300"
+                  />
+                </div>
+
+                {/* Alternate Edition Covers Switcher */}
+                {selectedWork.alternateCovers && selectedWork.alternateCovers.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[10px] uppercase font-bold text-[#2a2724]/70 dark:text-[#f5f2e6]/70 tracking-wider block">
+                      Cover Editions ({selectedWork.alternateCovers.length + 1})
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {[selectedWork.coverUrl, ...selectedWork.alternateCovers].map((cUrl, idx) => {
+                        const isCurrent = (activeModalCover || selectedWork.coverUrl) === cUrl;
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setActiveModalCover(cUrl)}
+                            className={`w-9 h-13 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
+                              isCurrent
+                                ? 'border-[#d4a373] ring-2 ring-[#d4a373]/50 scale-105 shadow-md'
+                                : 'border-transparent opacity-60 hover:opacity-100 hover:border-[#d4a373]/50'
+                            }`}
+                            title={`Select Edition Cover #${idx + 1}`}
+                          >
+                            <img src={cUrl} alt={`Cover edition ${idx + 1}`} className="w-full h-full object-cover" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3 flex-1">

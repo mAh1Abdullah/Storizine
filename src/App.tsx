@@ -71,6 +71,30 @@ export function App() {
   const [isOpenLibraryModalOpen, setIsOpenLibraryModalOpen] = useState(false);
   const [isStoryGraphModalOpen, setIsStoryGraphModalOpen] = useState(false);
 
+  // Check existing session on mount
+  useEffect(() => {
+    if (api.getToken()) {
+      api.getMe().then((res) => {
+        if (res && res.user) {
+          setIsLoggedIn(true);
+          if (res.profile) {
+            setAuthorProfile((prev) => ({
+              ...prev,
+              name: res.profile.penName || res.user.displayName || prev.name,
+              bio: res.profile.bio || prev.bio,
+              avatarUrl: res.profile.avatarUrl || prev.avatarUrl,
+              bannerUrl: res.profile.bannerUrl || prev.bannerUrl,
+              featuredQuote: res.profile.featuredQuote || prev.featuredQuote,
+            }));
+          }
+        }
+      }).catch(() => {
+        api.setToken(null);
+        setIsLoggedIn(false);
+      });
+    }
+  }, []);
+
   // Sync with Backend Database and IndexedDB
   useEffect(() => {
     api.getBooks().then((books) => {
@@ -181,7 +205,8 @@ export function App() {
         setSearchQuery={setSearchQuery}
         isLoggedIn={isLoggedIn}
         onOpenLoginModal={() => setIsLoginModalOpen(true)}
-        onLogout={() => {
+        onLogout={async () => {
+          await api.logout();
           setIsLoggedIn(false);
           navigate('/');
         }}

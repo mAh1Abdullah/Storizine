@@ -69,7 +69,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
         <div className="absolute inset-0 z-0">
           <img
             src={STORIZINE_ASSETS.magicalLibrary.path}
-            alt="Storizine & BookForest Sanctuary"
+            alt="STORIZINE Sanctuary"
             className="w-full h-full object-cover object-center opacity-45 transform hover:scale-105 transition-transform duration-1000 ease-out"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#181614] via-[#181614]/85 to-transparent" />
@@ -79,12 +79,12 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
         <div className="relative z-10 p-6 sm:p-10 lg:p-12 max-w-3xl space-y-5">
           <div className="flex items-center gap-2 text-xs font-mono tracking-widest uppercase text-[#d4a373]">
             <Sparkles className="w-4 h-4" />
-            <span>Unified Literary Ecosystem · v3.0</span>
+            <span>Literary Ecosystem · v3.0</span>
           </div>
 
           <div className="space-y-2">
             <h1 className="text-3xl sm:text-5xl font-serif font-normal tracking-tight leading-tight text-[#fffef2]">
-              Welcome back to <span className="italic font-serif text-[#f3d5b5]">Storizine &amp; BookForest</span>
+              Welcome back to <span className="italic font-serif text-[#f3d5b5]">STORIZINE</span>
             </h1>
             <p className="text-sm sm:text-base text-[#fffef2]/80 font-serif leading-relaxed">
               Curate your reading sanctuary, compose worlds across floating archipelagos, study high literary craft, and track submissions to international publications.
@@ -92,37 +92,38 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
           </div>
 
           {/* Quick Action Matrix (Zero-Pill Discipline: refined borders and clean typography) */}
-          <div className="pt-2 flex flex-wrap gap-3">
+          {/* Quick Action Matrix (Zero-Pill Discipline: refined borders and clean typography) */}
+          <div className="pt-2 grid grid-cols-2 sm:flex sm:flex-wrap gap-2.5 sm:gap-3">
             <button
               onClick={() => navigate('/read')}
-              className="px-4 py-2.5 rounded-xl bg-[#d4a373] hover:bg-[#c39262] text-[#181614] font-bold text-xs flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer"
+              className="px-3 sm:px-4 py-2.5 rounded-xl bg-[#d4a373] hover:bg-[#c39262] text-[#181614] font-bold text-xs flex items-center justify-center sm:justify-start gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer min-h-[44px]"
             >
-              <Library className="w-4 h-4" />
-              <span>Explore BookForest</span>
+              <Library className="w-4 h-4 shrink-0" />
+              <span className="truncate">Explore BookForest</span>
             </button>
 
             <button
               onClick={() => navigate('/write')}
-              className="px-4 py-2.5 rounded-xl bg-[#fffef2]/10 hover:bg-[#fffef2]/20 border border-[#fffef2]/30 text-[#fffef2] font-medium text-xs flex items-center gap-2 transition-all cursor-pointer"
+              className="px-3 sm:px-4 py-2.5 rounded-xl bg-[#fffef2]/10 hover:bg-[#fffef2]/20 border border-[#fffef2]/30 text-[#fffef2] font-medium text-xs flex items-center justify-center sm:justify-start gap-2 transition-all cursor-pointer min-h-[44px]"
             >
-              <Feather className="w-4 h-4 text-[#d4a373]" />
-              <span>Writing Studio</span>
+              <Feather className="w-4 h-4 text-[#d4a373] shrink-0" />
+              <span className="truncate">Writing Studio</span>
             </button>
 
             <button
               onClick={() => navigate('/magazine')}
-              className="px-4 py-2.5 rounded-xl bg-[#fffef2]/10 hover:bg-[#fffef2]/20 border border-[#fffef2]/30 text-[#fffef2] font-medium text-xs flex items-center gap-2 transition-all cursor-pointer"
+              className="px-3 sm:px-4 py-2.5 rounded-xl bg-[#fffef2]/10 hover:bg-[#fffef2]/20 border border-[#fffef2]/30 text-[#fffef2] font-medium text-xs flex items-center justify-center sm:justify-start gap-2 transition-all cursor-pointer min-h-[44px]"
             >
-              <Compass className="w-4 h-4 text-[#d4a373]" />
-              <span>Magazine Desk</span>
+              <Compass className="w-4 h-4 text-[#d4a373] shrink-0" />
+              <span className="truncate">Magazine Desk</span>
             </button>
 
             <button
               onClick={() => navigate('/publish')}
-              className="px-4 py-2.5 rounded-xl bg-[#fffef2]/10 hover:bg-[#fffef2]/20 border border-[#fffef2]/30 text-[#fffef2] font-medium text-xs flex items-center gap-2 transition-all cursor-pointer"
+              className="px-3 sm:px-4 py-2.5 rounded-xl bg-[#fffef2]/10 hover:bg-[#fffef2]/20 border border-[#fffef2]/30 text-[#fffef2] font-medium text-xs flex items-center justify-center sm:justify-start gap-2 transition-all cursor-pointer min-h-[44px]"
             >
-              <Send className="w-4 h-4 text-[#d4a373]" />
-              <span>Publishing Center</span>
+              <Send className="w-4 h-4 text-[#d4a373] shrink-0" />
+              <span className="truncate">Publishing Center</span>
             </button>
           </div>
         </div>

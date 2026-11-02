@@ -42,6 +42,7 @@ import { exportBookForestJSON, exportBookForestCSV } from '../utils/exportUtils'
 import { ReaderGraphSection } from './ReaderGraphSection';
 import { ClubsSection } from './ClubsSection';
 import { GoodreadsQuotesSection } from './GoodreadsQuotesSection';
+import { AuditSection } from './account/AuditSection';
 
 interface WriterDashboardViewProps {
   author: AuthorProfile;
@@ -417,7 +418,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
       </div>
 
       {/* Centered Minimalist Navigation Tabs Bar */}
-      <div className="flex items-center justify-center border-b border-[#ebd9c5]/60 dark:border-[#38332c]/60 pt-2 gap-6 sm:gap-10 overflow-x-auto text-xs font-medium">
+      <div className="flex items-center justify-start sm:justify-center border-b border-[#ebd9c5]/60 dark:border-[#38332c]/60 pt-2 -mx-4 px-4 sm:mx-0 sm:px-0 gap-6 sm:gap-10 overflow-x-auto no-scrollbar scroll-smooth text-xs font-medium">
         <NavLink
           to="/account"
           end
@@ -495,6 +496,19 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
           }
         >
           <span>Settings</span>
+        </NavLink>
+
+        <NavLink
+          to="/account/audit"
+          className={({ isActive }) =>
+            `pb-3 px-1 transition-all flex items-center space-x-1.5 whitespace-nowrap cursor-pointer ${
+              isActive
+                ? 'border-b-2 border-[#15803d] dark:border-[#4ade80] font-bold text-[#2a2724] dark:text-[#f5f2e6]'
+                : 'text-[#2a2724]/60 dark:text-[#f5f2e6]/60 hover:text-[#2a2724] dark:hover:text-[#f5f2e6]'
+            }`
+          }
+        >
+          <span>Audit &amp; Health</span>
         </NavLink>
       </div>
 
@@ -930,6 +944,7 @@ export const WriterDashboardView: React.FC<WriterDashboardViewProps> = ({
             }
           />
 
+          <Route path="audit" element={<AuditSection />} />
           <Route path="edit" element={<Navigate to="/account/settings" replace />} />
           <Route path="*" element={<Navigate to="/account" replace />} />
         </Routes>

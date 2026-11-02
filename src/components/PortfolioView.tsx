@@ -340,14 +340,14 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             <span>FULL LITERARY CATALOG</span>
           </div>
           <p className="text-xs text-[#2a2724]/70 dark:text-[#f5f2e6]/70 max-w-md">
-            Showing 9 of {filteredPublished.length} published titles. Visit the Storizine page to view all novels, series, short stories, and articles.
+            Showing 9 of {filteredPublished.length} published titles. Visit STORIZINE to view all novels, series, short stories, and articles.
           </p>
           {onNavigateToStorizine && (
             <button
               onClick={onNavigateToStorizine}
               className="px-6 py-3 rounded-2xl bg-[#2a2724] hover:bg-[#3d3834] text-[#d4a373] dark:bg-[#d4a373] dark:hover:bg-[#c39262] dark:text-[#181614] font-bold text-xs flex items-center space-x-2 shadow-md transition-all hover:scale-102"
             >
-              <span>See More Published Books on Storizine Page</span>
+              <span>See More Published Books on STORIZINE</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           )}
